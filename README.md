@@ -4,9 +4,9 @@ An experimental console and application environment for hardware, software, and 
 
 - [AppOS](AppOS/): navigable UI shell, application lifecycle, capabilities and eventual production protections
 - [Applications](Applications/): independently developed programs
-- [Hardware](Hardware/): device-specific integrations, including Kinect and cameras
-- [Lib](Lib/): reusable algorithms and primitives
-- [Playroom](Playroom/): experimental testbeds, including Kinect, UI, AR and VR
+- [Hardware](Hardware/): device-specific integrations, including Kinect, cameras and future FPGA/ESP targets
+- [Lib](Lib/): reusable algorithms and primitives, starting with signal filtering
+- [Playroom](Playroom/): capability browser, signal playground and research testbeds\n\nTry `python3 Playroom/Capabilities/browser.py` to browse the initial capability catalog (requires Tkinter).
 
 Develop directly in C, Python, Cython and Linux if useful. AppOS aims to offer device-agnostic services, consistent navigation, storage, audio and enforced production isolation without inventing a mandatory application language.
 
