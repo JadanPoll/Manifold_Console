@@ -50,14 +50,21 @@ class Supervisor:
     def __init__(self):
         self.apps = []
 
-    def launch(self, app):
+    def launch(self, app, armed=False):
         argv = app["entry"]["command"]
         if not isinstance(argv, list) or not argv or not all(isinstance(x, str) and x for x in argv):
             raise ValueError("Invalid command")
         cmd = [sys.executable if argv[0] == "python3" else argv[0], *argv[1:]]
+        if armed:
+            if app['id'] != 'manifold.playroom':
+                raise ValueError('Heartbeat watchdog is currently supported only by Playroom Studio')
+            cmd = [sys.executable, '-m', 'AppOS.Latent.watchdog', '--timeout', '12', '--', *cmd]
         def lower_priority():
             os.nice(10)
-        process = subprocess.Popen(cmd, cwd=app["_directory"], start_new_session=True,
+        env=os.environ.copy()
+        if armed:
+            env['PYTHONPATH']=str(__import__('pathlib').Path(__file__).resolve().parents[2])+os.pathsep+env.get('PYTHONPATH','')
+        process = subprocess.Popen(cmd, cwd=app["_directory"], env=env, start_new_session=True,
                                    preexec_fn=lower_priority if os.name == "posix" else None)
         item = ManagedApp(app["name"], process, time.monotonic())
         self.apps.append(item)
