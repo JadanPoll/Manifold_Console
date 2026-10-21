@@ -1,0 +1,20 @@
+{
+  "schema_version": 1,
+  "id": "example.depth_viewer",
+  "name": "Depth Viewer",
+  "entry": {
+    "command": [
+      "python3",
+      "main.py"
+    ]
+  },
+  "capabilities": [
+    "camera.depth"
+  ],
+  "storage": {
+    "scope": "app"
+  },
+  "ui": {
+    "integration": "managed-navigation"
+  }
+}
