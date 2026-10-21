@@ -1,0 +1,40 @@
+{
+  "schema_version": 1,
+  "capabilities": [
+    {
+      "id": "signal.synthetic",
+      "description": "Generate a local mathematical signal without hardware",
+      "risk": "none",
+      "implemented": true,
+      "provider": "Playroom/Studio/engine.py"
+    },
+    {
+      "id": "input.pointer",
+      "description": "Pointer events for a foreground UI",
+      "risk": "low",
+      "implemented": true,
+      "provider": "Tk window events"
+    },
+    {
+      "id": "camera.depth",
+      "description": "Depth frames from a permitted device",
+      "risk": "device",
+      "implemented": false,
+      "provider": null
+    },
+    {
+      "id": "network.udp",
+      "description": "User-authorized UDP transport",
+      "risk": "network",
+      "implemented": false,
+      "provider": null
+    },
+    {
+      "id": "storage.app",
+      "description": "Per-app persistent storage",
+      "risk": "filesystem",
+      "implemented": false,
+      "provider": null
+    }
+  ]
+}
