@@ -1,0 +1,120 @@
+{
+  "schema_version": 1,
+  "capabilities": [
+    {
+      "id": "signal.synthetic",
+      "name": "Synthetic signal lab",
+      "status": "working",
+      "domain": [
+        "Signals",
+        "Filtering"
+      ],
+      "summary": "Generate waveforms, tune gain and EMA smoothing, inspect plotted signals and pointer normalization.",
+      "source": "Playroom/Studio/engine.py",
+      "demo": {
+        "kind": "local",
+        "command": [
+          "python3",
+          "Playroom/Studio/main.py"
+        ]
+      },
+      "reference": "Playroom/Studio/README.md",
+      "requires": [],
+      "inputs": [
+        "frequency Hz",
+        "waveform sine/square/triangle",
+        "gain",
+        "EMA alpha"
+      ],
+      "outputs": [
+        "signal plot",
+        "smoothed signal"
+      ],
+      "notes": "Requires Tkinter and a graphical desktop. Does not need sensor access."
+    },
+    {
+      "id": "camera.kinect_depth",
+      "name": "Kinect depth capture",
+      "status": "hardware-verified",
+      "domain": [
+        "Cameras",
+        "Spatial"
+      ],
+      "summary": "Display a depth stream from the Kinect 1473 using the previously working native libfreenect installation.",
+      "source": "Hardware/Microsoft_Kinect/tests/test_kinect.py",
+      "demo": {
+        "kind": "manual",
+        "command": [
+          "kinect-run"
+        ]
+      },
+      "reference": "Hardware/Microsoft_Kinect/README.md",
+      "requires": [
+        "Kinect 1473",
+        "working freenect Python environment",
+        "exclusive USB camera access"
+      ],
+      "inputs": [
+        "raw depth from camera"
+      ],
+      "outputs": [
+        "depth visualization"
+      ],
+      "notes": "Original Pi demonstrated depth capture; migrated launcher is not verified. Camera may be busy if another program holds USB."
+    },
+    {
+      "id": "vision.hand_tracking",
+      "name": "Hand tracking and gesture input",
+      "status": "research",
+      "domain": [
+        "Tracking",
+        "Input"
+      ],
+      "summary": "Existing MediaPipe-based hand landmarks, pointer mapping and pinch interaction; original code remains device/GUI coupled.",
+      "source": "https://github.com/JadanPoll/HandActionToGameInput",
+      "demo": {
+        "kind": "none"
+      },
+      "reference": "Lib/Tracking/README.md",
+      "requires": [
+        "camera",
+        "MediaPipe",
+        "OpenCV"
+      ],
+      "inputs": [
+        "RGB frames"
+      ],
+      "outputs": [
+        "landmarks",
+        "mouse actions"
+      ],
+      "notes": "Not imported or validated on the Pi; do not treat as a stable Lib primitive."
+    },
+    {
+      "id": "vision.multi_camera",
+      "name": "Multi-camera compositing",
+      "status": "idea",
+      "domain": [
+        "Cameras",
+        "Spatial"
+      ],
+      "summary": "A future capability to compose synchronized visual streams from multiple cameras.",
+      "source": "Hardware/Cameras/README.md",
+      "demo": {
+        "kind": "none"
+      },
+      "reference": "Playroom/Research_Campus/README.md",
+      "requires": [
+        "two or more cameras",
+        "synchronization model"
+      ],
+      "inputs": [
+        "timestamped frames"
+      ],
+      "outputs": [
+        "composite visualization"
+      ],
+      "notes": "A research direction; no implementation or synchronization guarantees yet."
+    }
+  ]
+}
