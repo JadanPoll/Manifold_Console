@@ -135,7 +135,11 @@ class Browser(tk.Tk):
         if source.startswith("https://github.com/"):
             webbrowser.open(source)
         else:
-            messagebox.showinfo("Source",str(ROOT/source))
+            local = (ROOT / source).resolve()
+            if not local.is_relative_to(ROOT) or not local.is_file():
+                messagebox.showerror("Source unavailable", "Local source is missing or outside the repository.")
+                return
+            webbrowser.open(local.as_uri())
 
     def launch_demo(self):
         if self.selected is None:return
