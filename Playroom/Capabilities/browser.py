@@ -28,10 +28,10 @@ def search(capabilities, query="", status="All"):
     needle = query.casefold().strip()
     return [c for c in capabilities if
             (status == "All" or c["status"] == status) and
-            needle in " ".join(str(c.get(k,"")) for k in ("name","summary","domain","id")).casefold()]
+            needle in " ".join(str(c.get(k,"")) for k in ("name","summary","domain","id","use_when","keywords","inputs","outputs")).casefold()]
 
 def agent_context(c):
-    fields = ("id","name","status","summary","inputs","outputs","requires","reference","source","notes")
+    fields = ("id","name","status","summary","use_when","keywords","inputs","outputs","requires","reference","source","run_command","notes")
     return json.dumps({k:c[k] for k in fields if k in c}, indent=2)
 
 class Browser(tk.Tk):
@@ -46,7 +46,7 @@ class Browser(tk.Tk):
         header = ttk.Frame(self, padding=14)
         header.pack(fill="x")
         ttk.Label(header,text="CAPABILITIES",font=("Sans",19,"bold")).pack(anchor="w")
-        ttk.Label(header,text="Explore what works, what is experimental, and what might be possible.").pack(anchor="w")
+        ttk.Label(header,text="Search by problem, purpose, or technique. Select a capability to recover how to use it.").pack(anchor="w")
         filters = ttk.Frame(self,padding=(14,0,14,12))
         filters.pack(fill="x")
         self.query=tk.StringVar()
@@ -69,6 +69,7 @@ class Browser(tk.Tk):
         buttons=ttk.Frame(right,padding=(0,12))
         buttons.pack(fill="x")
         ttk.Button(buttons,text="Copy LLM reference",command=self.copy_reference).pack(side="left",padx=4)
+        ttk.Button(buttons,text="Copy run command",command=self.copy_command).pack(side="left",padx=4)
         ttk.Button(buttons,text="Open source",command=self.open_source).pack(side="left",padx=4)
         ttk.Button(buttons,text="Launch demo",command=self.launch_demo).pack(side="left",padx=4)
         self.populate()
@@ -91,6 +92,7 @@ class Browser(tk.Tk):
         self.selected=self.entries[picks[0]]
         c=self.selected
         lines=[c["name"],c["status"].upper(),"",c["summary"],"",
+               "Use when: "+c.get("use_when", "Explore this capability"),"",
                "Domains: "+", ".join(c["domain"]),
                "Inputs: "+", ".join(c["inputs"]),
                "Outputs: "+", ".join(c["outputs"]),
@@ -100,6 +102,26 @@ class Browser(tk.Tk):
                "Limitations: "+c["notes"]]
         self.details.delete("1.0",tk.END)
         self.details.insert("1.0","\n".join(lines))
+
+    @staticmethod
+    def run_instructions(c):
+        command = c.get("run_command")
+        if command:
+            return command
+        if c["demo"]["kind"] == "local":
+            return "Use Launch demo (if available)."
+        if c["demo"]["kind"] == "manual":
+            return "See reference for hardware-specific setup."
+        return "No runnable demonstration yet."
+
+    def copy_command(self):
+        if self.selected is None: return
+        command = self.selected.get("run_command")
+        if not command:
+            messagebox.showinfo("Run command", "No documented run command for this capability.")
+            return
+        self.clipboard_clear()
+        self.clipboard_append(command)
 
     def copy_reference(self):
         if self.selected is None:return
