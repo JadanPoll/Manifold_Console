@@ -7,6 +7,7 @@ from time import monotonic
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from engine import Signal, oscillator, clamp
+from recipe import load as load_recipe
 
 class Playroom(tk.Tk):
     def __init__(self):
@@ -33,6 +34,7 @@ class Playroom(tk.Tk):
         for col, (title, var, low, high) in enumerate((("Frequency",self.rate,.05,4),("EMA alpha",self.alpha,.05,1),("Gain",self.gain,.1,3)),start=1):
             ttk.Label(controls,text=title).grid(row=0,column=col)
             ttk.Scale(controls,variable=var,from_=low,to=high,orient="horizontal",length=155).grid(row=1,column=col,padx=8)
+        ttk.Button(controls, text="Load Recipe", command=self.load_recipe_dialog).grid(row=1,column=4,padx=8)
         self.canvas=tk.Canvas(self,bg="#101f34",height=290,highlightthickness=0)
         self.canvas.pack(fill="both",expand=True,padx=14,pady=10)
         self.canvas.bind("<Motion>",self.pointer)
@@ -40,6 +42,25 @@ class Playroom(tk.Tk):
         self.status.pack(fill="x")
         self.protocol("WM_DELETE_WINDOW",self.destroy)
         self.after(33,self.frame)
+
+    def load_recipe_dialog(self):
+        from tkinter import filedialog, messagebox
+        path = filedialog.askopenfilename(title="Open Playroom recipe", filetypes=[("JSON recipe", "*.json")])
+        if not path:
+            return
+        try:
+            self.apply_recipe(load_recipe(path))
+        except (ValueError, OSError) as exc:
+            messagebox.showerror("Invalid recipe", str(exc))
+
+    def apply_recipe(self, recipe):
+        self.wave.set(recipe["waveform"])
+        self.rate.set(recipe["frequency"])
+        self.gain.set(recipe["gain"])
+        self.alpha.set(recipe["smoothing"])
+        self.signal = Signal(alpha=self.alpha.get())
+        self.started = monotonic()
+        self.status.config(text="Loaded validated recipe: " + recipe["waveform"])
 
     def pointer(self,e):
         width=max(1,self.canvas.winfo_width())
