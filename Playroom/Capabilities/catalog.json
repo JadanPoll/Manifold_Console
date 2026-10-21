@@ -30,7 +30,16 @@
         "signal plot",
         "smoothed signal"
       ],
-      "notes": "Requires Tkinter and a graphical desktop. Does not need sensor access."
+      "notes": "Requires Tkinter and a graphical desktop. Does not need sensor access.",
+      "use_when": "Explore waveforms, filtering, smoothing, or input normalization without hardware.",
+      "keywords": [
+        "waveform",
+        "EMA",
+        "signal",
+        "filter",
+        "noise"
+      ],
+      "run_command": "python3 Playroom/Studio/main.py"
     },
     {
       "id": "camera.kinect_depth",
@@ -60,7 +69,16 @@
       "outputs": [
         "depth visualization"
       ],
-      "notes": "Original Pi demonstrated depth capture; migrated launcher is not verified. Camera may be busy if another program holds USB."
+      "notes": "Original Pi demonstrated depth capture; migrated launcher is not verified. Camera may be busy if another program holds USB.",
+      "use_when": "Check whether the Kinect depth camera works and inspect raw distance images.",
+      "keywords": [
+        "depth",
+        "distance",
+        "USB",
+        "diagnostic",
+        "sensor"
+      ],
+      "run_command": "kinect-run"
     },
     {
       "id": "vision.hand_tracking",
@@ -88,7 +106,15 @@
         "landmarks",
         "mouse actions"
       ],
-      "notes": "Not imported or validated on the Pi; do not treat as a stable Lib primitive."
+      "notes": "Not imported or validated on the Pi; do not treat as a stable Lib primitive.",
+      "use_when": "Investigate finger landmarks, pinch, gesture-to-input, and motion controls.",
+      "keywords": [
+        "hand",
+        "gesture",
+        "cursor",
+        "motion game",
+        "tracking"
+      ]
     },
     {
       "id": "vision.multi_camera",
@@ -114,7 +140,132 @@
       "outputs": [
         "composite visualization"
       ],
-      "notes": "A research direction; no implementation or synchronization guarantees yet."
+      "notes": "A research direction; no implementation or synchronization guarantees yet.",
+      "use_when": "Investigate camera synchronization, combined viewpoints, and spatial reconstruction.",
+      "keywords": [
+        "stereo",
+        "sync",
+        "cameras",
+        "compositing"
+      ]
+    },
+    {
+      "id": "vision.nearest_depth_point",
+      "name": "Nearest depth point (native C)",
+      "status": "research",
+      "domain": [
+        "Cameras",
+        "Spatial",
+        "Native C"
+      ],
+      "summary": "Find the closest valid Kinect depth pixel with a small C function, independent of graphics.",
+      "use_when": "Detect the nearest object to a camera, prototype hand approach, or investigate low-cost motion input.",
+      "keywords": [
+        "nearest point",
+        "approach",
+        "air canvas",
+        "depth",
+        "C",
+        "no GUI"
+      ],
+      "source": "AppOS/Native/depth.c",
+      "demo": {
+        "kind": "manual",
+        "command": []
+      },
+      "reference": "AppOS/Native/depth.h",
+      "requires": [
+        "Kinect 1473",
+        "working freenect Python environment",
+        "native depth library built"
+      ],
+      "inputs": [
+        "contiguous uint16 depth frame"
+      ],
+      "outputs": [
+        "nearest pixel x/y",
+        "raw depth"
+      ],
+      "run_command": "make -C AppOS/Native && python Playroom/Kinect/Experiments/native_depth_point.py",
+      "notes": "New integration, not yet verified on Pi. Invoke with the Python interpreter/environment where freenect already works. Camera use is exclusive; Ctrl+C exits."
+    },
+    {
+      "id": "play.kinect_air_canvas",
+      "name": "Kinect 3D air canvas",
+      "status": "research",
+      "domain": [
+        "Cameras",
+        "Drawing",
+        "Spatial"
+      ],
+      "summary": "Draw in the air by tracking a near depth point and overlaying its trail on RGB video.",
+      "use_when": "Explore embodied drawing, near-field interaction, depth-to-action mapping or gesture game ideas.",
+      "keywords": [
+        "drawing",
+        "hand",
+        "paint",
+        "air canvas",
+        "Kinect",
+        "motion"
+      ],
+      "source": "Playroom/Kinect/Experiments/03_the_point.py",
+      "demo": {
+        "kind": "manual",
+        "command": []
+      },
+      "reference": "Hardware/Microsoft_Kinect/README.md",
+      "requires": [
+        "Kinect 1473",
+        "working freenect Python environment",
+        "OpenCV",
+        "graphical desktop"
+      ],
+      "inputs": [
+        "RGB and depth frames"
+      ],
+      "outputs": [
+        "interactive drawing overlay"
+      ],
+      "run_command": "python Playroom/Kinect/Experiments/03_the_point.py",
+      "notes": "Imported experiment, not validated after migration. Run in working Kinect environment; opens a GUI and uses camera exclusively. Press q to quit, c to clear."
+    },
+    {
+      "id": "native.compute_observer",
+      "name": "Headless compute / UI observer",
+      "status": "research",
+      "domain": [
+        "Native C",
+        "Performance",
+        "Visualization"
+      ],
+      "summary": "Demonstrates 60 synthetic processing steps with only 10 optional presentation summaries.",
+      "use_when": "Understand how experimental computation can be separated from visual refresh work.",
+      "keywords": [
+        "headless",
+        "render frequency",
+        "C",
+        "sampling",
+        "observer",
+        "CPU"
+      ],
+      "source": "AppOS/Native/observer_demo.c",
+      "demo": {
+        "kind": "manual",
+        "command": []
+      },
+      "reference": "AppOS/Native/README.md",
+      "requires": [
+        "C compiler",
+        "make"
+      ],
+      "inputs": [
+        "synthetic frame samples"
+      ],
+      "outputs": [
+        "periodic terminal summaries"
+      ],
+      "run_command": "make -C AppOS/Native && ./AppOS/Native/build/observer_demo",
+      "notes": "No display or Kinect needed. Single-threaded demonstration only; not independent scheduling."
     }
   ]
 }
