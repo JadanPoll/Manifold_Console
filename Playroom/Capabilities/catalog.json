@@ -266,6 +266,52 @@
       ],
       "run_command": "make -C AppOS/Native && ./AppOS/Native/build/observer_demo",
       "notes": "No display or Kinect needed. Single-threaded demonstration only; not independent scheduling."
+    },
+    {
+      "id": "play.gravity_field",
+      "name": "Gravity field playground",
+      "status": "research",
+      "domain": [
+        "Physics",
+        "Games",
+        "Interaction"
+      ],
+      "summary": "Move gravitational attractors and watch bounded particles respond; an interactive toy for orbital intuition and control experiments.",
+      "use_when": "Experiment with attraction, orbital paths, force strength, chaotic trajectories, or potential motion-controlled interactions.",
+      "keywords": [
+        "gravity",
+        "orbits",
+        "particles",
+        "attractors",
+        "physics game",
+        "interactive",
+        "mouse"
+      ],
+      "source": "Playroom/Playground/gravity.py",
+      "demo": {
+        "kind": "local",
+        "command": [
+          "python3",
+          "Playroom/Playground/gravity.py"
+        ]
+      },
+      "reference": "Playroom/Playground/gravity.py",
+      "requires": [
+        "Tkinter",
+        "graphical desktop"
+      ],
+      "inputs": [
+        "mouse drag",
+        "mouse click",
+        "attraction slider",
+        "keyboard shortcuts"
+      ],
+      "outputs": [
+        "moving particle paths",
+        "interactive attractor field"
+      ],
+      "run_command": "python3 Playroom/Playground/gravity.py",
+      "notes": "Toy force field, not calibrated physical gravity. Bounded to 48 particles and 25 redraws/sec; not yet tested on Pi. Space pauses, R resets, C clears trails."
     }
   ]
 }
