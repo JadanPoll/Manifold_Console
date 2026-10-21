@@ -27,3 +27,6 @@ registration_test_*
 # System files
 .DS_Store
 Thumbs.db
+
+# Local native compilation output
+AppOS/Native/build/
