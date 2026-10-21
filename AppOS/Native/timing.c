@@ -25,3 +25,7 @@ void mc_timing_report(const char *name, uint64_t start_ns) {
         fprintf(stderr, "[mc-timing] %s %.3f ms\n", name, (double)(now - start_ns) / 1000000.0);
 }
 #endif
+
+#if !defined(MC_TIMING) || !(MC_TIMING)
+typedef int mc_timing_disabled_translation_unit;
+#endif
