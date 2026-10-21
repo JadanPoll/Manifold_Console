@@ -35,6 +35,22 @@ class Playground(tk.Tk):
         self.trails = []
         self.rng = random.Random(42)
         self.reset()
+        # Allocate Canvas items once; move them instead of delete/create per frame.
+        self.trail_ids = [
+            self.canvas.create_line(0, 0, 0, 0, fill="#274d68", width=1, state="hidden")
+            for _ in range(MAX_PARTICLES)
+        ]
+        self.particle_ids = [
+            self.canvas.create_oval(0, 0, 0, 0, fill="#9de5fd", outline="")
+            for _ in range(MAX_PARTICLES)
+        ]
+        self.attractor_ids = [
+            self.canvas.create_oval(0, 0, 0, 0, fill="#ffbd5e",
+                                    outline="#fff1b3", width=2, state="hidden")
+            for _ in range(MAX_ATTRACTORS)
+        ]
+        self.status_id = self.canvas.create_text(
+            10, 12, anchor="nw", fill="#a9bbc7", text="")
         self.canvas.bind("<ButtonPress-1>", self.press)
         self.canvas.bind("<B1-Motion>", self.drag)
         self.canvas.bind("<ButtonRelease-1>", lambda e: setattr(self, "dragging", None))
@@ -102,18 +118,23 @@ class Playground(tk.Tk):
                 track.append((p[0], p[1]))
                 if len(track) > 7:
                     track.pop(0)
-        self.canvas.delete("all")
-        for track in self.trails:
+        for i, track in enumerate(self.trails):
             if len(track) > 1:
-                points = [v for xy in track for v in xy]
-                self.canvas.create_line(*points, fill="#274d68", width=1, smooth=False)
-        for sx, sy in self.attractors:
-            self.canvas.create_oval(sx-15, sy-15, sx+15, sy+15, fill="#ffbd5e", outline="#fff1b3", width=2)
-        for x, y, vx, vy in self.particles:
-            self.canvas.create_oval(x-2, y-2, x+2, y+2, fill="#9de5fd", outline="")
-        self.canvas.create_text(10, 12, anchor="nw", fill="#a9bbc7",
-                                text=f"{len(self.particles)} particles · {len(self.attractors)} attractors" +
-                                     (" · PAUSED" if self.paused else ""))
+                self.canvas.coords(self.trail_ids[i], *(v for xy in track for v in xy))
+                self.canvas.itemconfigure(self.trail_ids[i], state="normal")
+            else:
+                self.canvas.itemconfigure(self.trail_ids[i], state="hidden")
+        for i, (sx, sy) in enumerate(self.attractors):
+            self.canvas.coords(self.attractor_ids[i], sx-15, sy-15, sx+15, sy+15)
+            self.canvas.itemconfigure(self.attractor_ids[i], state="normal")
+        for i in range(len(self.attractors), MAX_ATTRACTORS):
+            self.canvas.itemconfigure(self.attractor_ids[i], state="hidden")
+        for i, (x, y, vx, vy) in enumerate(self.particles):
+            self.canvas.coords(self.particle_ids[i], x-2, y-2, x+2, y+2)
+        self.canvas.itemconfigure(
+            self.status_id,
+            text=f"{len(self.particles)} particles · {len(self.attractors)} attractors" +
+                 (" · PAUSED" if self.paused else ""))
         self.after(FPS_MS, self.tick)
 
 if __name__ == "__main__":
