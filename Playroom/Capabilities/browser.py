@@ -150,11 +150,16 @@ class Browser(tk.Tk):
             return
         # Only exact hardcoded commands in the trusted checked-in catalog;
         # never run instructions pasted from a model or external research entry.
-        if self.selected["id"] != "signal.synthetic" or demo["command"] != ["python3","Playroom/Studio/main.py"]:
+        allowed = {
+            "signal.synthetic": ("Playroom/Studio/main.py", ["python3", "Playroom/Studio/main.py"]),
+            "play.gravity_field": ("Playroom/Playground/gravity.py", ["python3", "Playroom/Playground/gravity.py"]),
+        }
+        expected = allowed.get(self.selected["id"])
+        if expected is None or demo["command"] != expected[1]:
             messagebox.showerror("Blocked","Demo command is not in the local allowlist.")
             return
         try:
-            subprocess.Popen([sys.executable,str(ROOT/"Playroom/Studio/main.py")],cwd=ROOT)
+            subprocess.Popen([sys.executable, str(ROOT / expected[0])], cwd=ROOT)
         except OSError as exc:
             messagebox.showerror("Launch failed",str(exc))
 
