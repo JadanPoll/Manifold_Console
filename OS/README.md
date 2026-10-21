@@ -1,3 +1,3 @@
-# OS
+# Superseded directory
 
-Reserved for future application orchestration, services, package interfaces and Console runtime experiments. The concrete architecture is undecided.
+The intended application-facing UI/runtime is now documented under [`AppOS/`](../AppOS/). This legacy placeholder remains temporarily to avoid destructive reorganization; no OS kernel is planned here.
