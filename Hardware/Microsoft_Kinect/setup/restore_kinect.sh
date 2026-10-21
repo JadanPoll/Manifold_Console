@@ -1,23 +1,24 @@
 #!/usr/bin/env bash
 # Kinect for Windows 1473, Debian 12 ARM64, user-local installation.
-# Usage: bash restore_kinect.sh /path/to/KinectGames
-# Optional: KINECT_FIRMWARE=/path/to/audios.bin bash restore_kinect.sh /path/to/KinectGames
+# Usage: bash setup/restore_kinect.sh
+# Optional: KINECT_SOURCE=/path/to/libfreenect KINECT_FIRMWARE=/path/to/audios.bin bash setup/restore_kinect.sh
 set -Eeuo pipefail
 trap 'echo "ERROR on line $LINENO. Check the output above." >&2' ERR
-PROJECT="${1:?Usage: bash restore_kinect.sh /path/to/KinectGames}"
-PROJECT="$(cd "$PROJECT" && pwd)"
+PROJECT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+SOURCE="${KINECT_SOURCE:-$HOME/Desktop/KinectGames/libfreenect}"
+[[ -d "$SOURCE" ]] && SOURCE="$(cd "$SOURCE" && pwd)"
 WORK="${KINECT_WORK:-$HOME/kinect-arm64}"
 PREFIX="${KINECT_PREFIX:-$HOME/.local}"
 VENV="${KINECT_VENV:-$HOME/.venvs/beastgames-kinect}"
 [[ "$(uname -m)" == "aarch64" ]] || { echo "Requires ARM64; detected $(uname -m)" >&2; exit 1; }
 [[ -f /etc/debian_version ]] || echo 'Warning: designed/tested against Debian 12.' >&2
 for cmd in python3 gcc make cmake dpkg-deb apt curl; do command -v "$cmd" >/dev/null || { echo "Missing build tool: $cmd" >&2; exit 1; }; done
-[[ -f "$PROJECT/libfreenect/CMakeLists.txt" ]] || { echo "Missing libfreenect source in $PROJECT" >&2; exit 1; }
+[[ -f "$SOURCE/CMakeLists.txt" ]] || { echo "Missing libfreenect source at $SOURCE; set KINECT_SOURCE=/path/to/libfreenect" >&2; exit 1; }
 mkdir -p "$WORK" "$PREFIX/lib" "$PREFIX/include" "$HOME/.libfreenect" "$(dirname "$VENV")"
 # Firmware must come from an existing user-owned copy; do not redownload without consent.
 FIRMWARE="${KINECT_FIRMWARE:-}"
 if [[ -z "$FIRMWARE" ]]; then
-  for guess in "$HOME/.libfreenect/audios.bin" "$PREFIX/share/libfreenect/audios.bin" "$PROJECT/audios.bin"; do
+  for guess in "$HOME/.libfreenect/audios.bin" "$PREFIX/share/libfreenect/audios.bin" "$SOURCE/src/audios.bin"; do
     if [[ -s "$guess" ]]; then FIRMWARE="$guess"; break; fi
   done
 fi
@@ -42,7 +43,7 @@ export LIBRARY_PATH="$PREFIX/lib:${LIBRARY_PATH:-}"
 export LD_LIBRARY_PATH="$PREFIX/lib:${LD_LIBRARY_PATH:-}"
 export CMAKE_PREFIX_PATH="$PREFIX:${CMAKE_PREFIX_PATH:-}"
 # Compile on ext4, not on the removable FAT32 drive.
-if [[ ! -d "$WORK/libfreenect" ]]; then cp -a "$PROJECT/libfreenect" "$WORK/libfreenect"; fi
+if [[ ! -d "$WORK/libfreenect" ]]; then cp -a "$SOURCE" "$WORK/libfreenect"; fi
 SRC="$WORK/libfreenect/src/usb_libusb10.c"
 python3 - "$SRC" <<'PY'
 from pathlib import Path
@@ -91,5 +92,5 @@ cat <<EOM
 SUCCESS: build/import test passed. Hardware must still be tested on this Pi.
 Run:
   export LD_LIBRARY_PATH="$PREFIX/lib:\${LD_LIBRARY_PATH:-}"
-  QT_QPA_PLATFORM=xcb "$VENV/bin/python" "$PROJECT/test_kinect.py"
+  QT_QPA_PLATFORM=xcb "$VENV/bin/python" "$PROJECT/tests/test_kinect.py"
 EOM
