@@ -1,0 +1,50 @@
+{
+  "schema_version": 1,
+  "id": "math.ema",
+  "version": "0.1.0",
+  "status": "candidate",
+  "implementation": "Playroom/Studio/engine.py:EMA",
+  "description": "Exponential moving average of scalar input",
+  "inputs": [
+    {
+      "name": "sample",
+      "type": "float",
+      "unit": "arbitrary"
+    }
+  ],
+  "outputs": [
+    {
+      "name": "smoothed",
+      "type": "float",
+      "unit": "same_as_input"
+    }
+  ],
+  "parameters": [
+    {
+      "name": "alpha",
+      "type": "float",
+      "minimum": 0,
+      "exclusive_minimum": true,
+      "maximum": 1
+    }
+  ],
+  "effects": [],
+  "permissions": [],
+  "failure_cases": [
+    "alpha outside (0,1]"
+  ],
+  "tests": [
+    "Playroom/Studio/test_engine.py"
+  ],
+  "example": {
+    "alpha": 0.5,
+    "samples": [
+      0,
+      1
+    ],
+    "expected": [
+      0,
+      0.5
+    ]
+  }
+}
