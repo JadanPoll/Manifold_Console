@@ -99,6 +99,7 @@ class Browser(tk.Tk):
                "Needs: "+(", ".join(c["requires"]) or "None"),"",
                "Source: "+c["source"],
                "Reference: "+c["reference"],"",
+               "How to run: "+self.run_instructions(c),"",
                "Limitations: "+c["notes"]]
         self.details.delete("1.0",tk.END)
         self.details.insert("1.0","\n".join(lines))
