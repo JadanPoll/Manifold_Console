@@ -12,4 +12,4 @@ python3 -m unittest discover -s Playroom/Studio -p 'test_*.py'
 
 On Debian/Raspberry Pi install `python3-tk` through the system package manager if tkinter is missing. GUI requires an active desktop session/display.
 
-`example.recipe.json` and `recipe.py` establish the constrained JSON experiment format for future LLM-driven UI; recipe-to-controls wiring is not yet implemented. The shell and launcher are **Dev only**: no sandbox, capability enforcement, app switch interception, or security guarantees.
+`example.recipe.json` and `recipe.py` establish the constrained JSON experiment format for future LLM-driven UI; the Load Recipe button imports and validates JSON then updates controls. The shell and launcher are **Dev only**: no sandbox, capability enforcement, app switch interception, or security guarantees.
