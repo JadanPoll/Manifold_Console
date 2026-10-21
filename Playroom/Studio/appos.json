@@ -1,0 +1,8 @@
+{
+  "schema_version": 1,
+  "id": "manifold.playroom",
+  "name": "Playroom Studio",
+  "entry": {"command": ["python3", "main.py"]},
+  "capabilities": [],
+  "ui": {"integration": "external-window", "category": "Playroom"}
+}
