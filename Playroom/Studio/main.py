@@ -9,6 +9,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from engine import Signal, oscillator, clamp
 from recipe import load as load_recipe, validate as validate_recipe
 import json
+import os
 
 class Playroom(tk.Tk):
     def __init__(self):
@@ -96,6 +97,12 @@ class Playroom(tk.Tk):
         self.status.config(text=f"Pointer: x={clamp(2*e.x/width-1):+.3f}  y={clamp(1-2*e.y/height):+.3f}  |  raw={self.last:+.3f}")
 
     def frame(self):
+        heartbeat=os.environ.get('APPOS_HEARTBEAT_FILE')
+        if heartbeat:
+            try:
+                os.utime(heartbeat,None)
+            except OSError:
+                pass
         if not self.winfo_exists():
             return
         now=monotonic()-self.started
