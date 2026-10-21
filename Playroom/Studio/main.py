@@ -44,7 +44,7 @@ class Playroom(tk.Tk):
         self.status=ttk.Label(self,text="Move pointer over the plot to inspect normalized input.",padding=14)
         self.status.pack(fill="x")
         self.protocol("WM_DELETE_WINDOW",self.destroy)
-        self.after(33,self.frame)
+        self.after(100,self.frame)
 
     def paste_recipe(self):
         from tkinter import messagebox
@@ -112,11 +112,12 @@ class Playroom(tk.Tk):
             samples=list(series)
             if len(samples)>1:
                 coords=[]
-                for i,v in enumerate(samples):
-                    coords.extend((i*w/499.0, (1-clamp(v))*h/2))
+                step=max(1,(len(samples)+119)//120)
+                for i in range(0,len(samples),step):
+                    coords.extend((i*w/499.0, (1-clamp(samples[i]))*h/2))
                 c.create_line(*coords,fill=color,width=2,smooth=False)
         c.create_text(14,15,text="BLUE: raw    GOLD: EMA-filtered",fill="white",anchor="w")
-        self.after(33,self.frame)
+        self.after(100,self.frame)
 
 if __name__=="__main__":
     Playroom().mainloop()
