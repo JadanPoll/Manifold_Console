@@ -1,9 +1,16 @@
-"""Pure, dependency-free signal primitives for rapid experiments."""
+"""Small signal demo built on reusable Lib primitives."""
 from collections import deque
+from pathlib import Path
 import math
+import sys
+
+ROOT = Path(__file__).resolve().parents[2]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+from Lib.Signal import EMA, clamp as _clamp
 
 def clamp(value, lo=-1.0, hi=1.0):
-    return min(hi, max(lo, value))
+    return _clamp(value, lo, hi)
 
 def oscillator(t, rate=1.0, waveform="sine"):
     p = (t * max(rate, 0.0)) % 1.0
@@ -12,17 +19,6 @@ def oscillator(t, rate=1.0, waveform="sine"):
     if waveform == "square":
         return 1.0 if p < 0.5 else -1.0
     return math.sin(2.0 * math.pi * p)
-
-class EMA:
-    def __init__(self, alpha=0.35):
-        if not 0 < alpha <= 1:
-            raise ValueError("alpha must be in (0,1]")
-        self.alpha = alpha
-        self.last = None
-
-    def step(self, x):
-        self.last = x if self.last is None else self.alpha * x + (1.0-self.alpha) * self.last
-        return self.last
 
 class Signal:
     def __init__(self, alpha=0.35, history=500):
@@ -33,4 +29,3 @@ class Signal:
     def step(self, value):
         self.raw.append(value)
         self.smooth.append(self.filter.step(value))
-
