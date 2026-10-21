@@ -1,0 +1,29 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+
+# Native builds
+build/
+dist/
+CMakeFiles/
+CMakeCache.txt
+*.o
+*.so
+*.a
+
+# Kinect dependencies and generated artifacts
+Hardware/Microsoft_Kinect/libfreenect/
+Hardware/Microsoft_Kinect/Kinect_Offline_Cache/
+audios.bin
+*.deb
+
+# Generated capture outputs
+registration_test_*
+*.log
+
+# System files
+.DS_Store
+Thumbs.db
