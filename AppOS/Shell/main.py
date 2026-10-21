@@ -19,6 +19,7 @@ class Shell(tk.Tk):
         self.index=0
         self.children=[]
         self.latent=Supervisor()
+        self.arm_watchdog=tk.BooleanVar(value=False)
         self.heading=tk.Label(self,text="MANIFOLD  /  CHANNELS",font=("Sans",22,"bold"),bg="#e8f1f8",fg="#19384d")
         self.heading.pack(pady=(32,8))
         tk.Label(self,text="Arrows to navigate  ·  Enter to launch  ·  R to refresh  ·  Escape to close",bg="#e8f1f8",fg="#47617b").pack()
@@ -30,6 +31,7 @@ class Shell(tk.Tk):
         bar.pack(fill="x",padx=35)
         self.telemetry=tk.Label(bar,text="Latent: starting",bg="#e8f1f8",fg="#47617b")
         self.telemetry.pack(side="left",expand=True,fill="x")
+        tk.Checkbutton(bar,text="Prime watchdog (Playroom only)",variable=self.arm_watchdog,bg="#e8f1f8").pack(side="right")
         tk.Button(bar,text="Stop latest",command=lambda:self.stop_latest(False)).pack(side="right")
         tk.Button(bar,text="Kill latest",command=lambda:self.stop_latest(True)).pack(side="right")
         self.after(1000,self.refresh_latent)
@@ -55,7 +57,7 @@ class Shell(tk.Tk):
             return
         app=self.apps[self.index]
         try:
-            managed=self.latent.launch(app)
+            managed=self.latent.launch(app, armed=self.arm_watchdog.get())
             self.children.append(managed)
             self.status.config(text=f"Launched {app['name']} (PID {managed.proc.pid}); lower priority, NOT sandboxed.")
         except (OSError,ValueError) as exc:
