@@ -7,7 +7,7 @@ from tkinter import messagebox
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
 from AppOS.Runtime.catalog import discover
-from AppOS.Runtime.launcher import launch
+from AppOS.Latent.supervisor import Supervisor, host_memory
 
 class Shell(tk.Tk):
     def __init__(self):
@@ -18,6 +18,7 @@ class Shell(tk.Tk):
         self.apps=discover(ROOT)
         self.index=0
         self.children=[]
+        self.latent=Supervisor()
         self.heading=tk.Label(self,text="MANIFOLD  /  CHANNELS",font=("Sans",22,"bold"),bg="#e8f1f8",fg="#19384d")
         self.heading.pack(pady=(32,8))
         tk.Label(self,text="Arrows to navigate  ·  Enter to launch  ·  R to refresh  ·  Escape to close",bg="#e8f1f8",fg="#47617b").pack()
@@ -25,6 +26,13 @@ class Shell(tk.Tk):
         self.grid_frame.pack(expand=True,fill="both",padx=35,pady=30)
         self.status=tk.Label(self,text="",bg="#e8f1f8",fg="#47617b")
         self.status.pack(pady=12)
+        bar=tk.Frame(self,bg="#e8f1f8")
+        bar.pack(fill="x",padx=35)
+        self.telemetry=tk.Label(bar,text="Latent: starting",bg="#e8f1f8",fg="#47617b")
+        self.telemetry.pack(side="left",expand=True,fill="x")
+        tk.Button(bar,text="Stop latest",command=lambda:self.stop_latest(False)).pack(side="right")
+        tk.Button(bar,text="Kill latest",command=lambda:self.stop_latest(True)).pack(side="right")
+        self.after(1000,self.refresh_latent)
         self.bind("<Left>",lambda _:self.move(-1))
         self.bind("<Right>",lambda _:self.move(1))
         self.bind("<Return>",lambda _:self.open_selected())
@@ -47,11 +55,25 @@ class Shell(tk.Tk):
             return
         app=self.apps[self.index]
         try:
-            process=launch(app)
-            self.children.append(process)
-            self.status.config(text=f"Launched {app['name']} (PID {process.pid}); not sandboxed.")
+            managed=self.latent.launch(app)
+            self.children.append(managed)
+            self.status.config(text=f"Launched {app['name']} (PID {managed.proc.pid}); lower priority, NOT sandboxed.")
         except (OSError,ValueError) as exc:
             messagebox.showerror("Launch failed",str(exc))
+
+    def stop_latest(self, force):
+        running=[item for item in self.children if item.proc.poll() is None]
+        if running:
+            running[-1].stop(force)
+            self.status.config(text=("Killed " if force else "Requested stop of ")+running[-1].name)
+
+    def refresh_latent(self):
+        available,total=host_memory()
+        memory=f"{available//1048576} MiB available" if available is not None else "memory unknown"
+        running=[item.snapshot() for item in self.children if item.proc.poll() is None]
+        report=", ".join("{} {} MiB".format(x["name"],(x["rss"] or 0)//1048576) for x in running)
+        self.telemetry.config(text="Latent | "+memory+" | "+(report or "no managed apps"))
+        self.after(1000,self.refresh_latent)
 
     def draw(self):
         for child in self.grid_frame.winfo_children():
