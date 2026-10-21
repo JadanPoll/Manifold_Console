@@ -7,7 +7,8 @@ from time import monotonic
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from engine import Signal, oscillator, clamp
-from recipe import load as load_recipe
+from recipe import load as load_recipe, validate as validate_recipe
+import json
 
 class Playroom(tk.Tk):
     def __init__(self):
@@ -35,6 +36,8 @@ class Playroom(tk.Tk):
             ttk.Label(controls,text=title).grid(row=0,column=col)
             ttk.Scale(controls,variable=var,from_=low,to=high,orient="horizontal",length=155).grid(row=1,column=col,padx=8)
         ttk.Button(controls, text="Load Recipe", command=self.load_recipe_dialog).grid(row=1,column=4,padx=8)
+        ttk.Button(controls, text="Paste Recipe", command=self.paste_recipe).grid(row=1,column=5,padx=8)
+        ttk.Button(controls, text="Copy LLM Context", command=self.copy_context).grid(row=1,column=6,padx=8)
         self.canvas=tk.Canvas(self,bg="#101f34",height=290,highlightthickness=0)
         self.canvas.pack(fill="both",expand=True,padx=14,pady=10)
         self.canvas.bind("<Motion>",self.pointer)
@@ -42,6 +45,31 @@ class Playroom(tk.Tk):
         self.status.pack(fill="x")
         self.protocol("WM_DELETE_WINDOW",self.destroy)
         self.after(33,self.frame)
+
+    def paste_recipe(self):
+        from tkinter import messagebox
+        try:
+            content = self.clipboard_get()
+            if len(content.encode("utf-8")) > 8192:
+                raise ValueError("Recipe exceeds 8 KiB")
+            recipe = validate_recipe(json.loads(content))
+            self.apply_recipe(recipe)
+        except (ValueError, OSError, tk.TclError) as exc:
+            messagebox.showerror("Invalid pasted recipe", str(exc))
+
+    def copy_context(self):
+        context = (
+            "Generate ONLY a JSON object for Manifold Playroom Studio; no Markdown or code. "
+            "Required exact fields: version=1 (integer), waveform one of sine/square/triangle, "
+            "frequency number 0.05..4.0, gain number 0.1..3.0, smoothing number 0.05..1.0. "
+            "Example: "
+            + json.dumps(dict(version=1,waveform=self.wave.get(),frequency=round(self.rate.get(),3),
+                              gain=round(self.gain.get(),3),smoothing=round(self.alpha.get(),3)))
+            + " This recipe controls a synthetic signal only; it cannot access devices or execute code."
+        )
+        self.clipboard_clear()
+        self.clipboard_append(context)
+        self.status.config(text="LLM recipe context copied. Paste into chat; copy the returned JSON and select Paste Recipe.")
 
     def load_recipe_dialog(self):
         from tkinter import filedialog, messagebox
