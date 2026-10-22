@@ -3,6 +3,7 @@
 Drag an attractor to move it, click empty space to add one. Space pauses.
 The simulation is bounded deliberately for Raspberry Pi use.
 """
+import argparse
 import math
 import random
 import tkinter as tk
@@ -12,10 +13,15 @@ DT = 0.035
 MAX_PARTICLES = 48
 MAX_ATTRACTORS = 5
 FPS_MS = 40
+# Drawing is deliberately less frequent than physics on problematic XWayland stacks.
+DRAW_EVERY = 4
 
 class Playground(tk.Tk):
-    def __init__(self):
+    def __init__(self, draw_every=DRAW_EVERY, trails=False):
         super().__init__()
+        self.draw_every = draw_every
+        self.draw_trails = trails
+        self.frame_number = 0
         self.title("Manifold / Gravity Playground")
         self.resizable(False, False)
         self.canvas = tk.Canvas(self, width=W, height=H, bg="#0d1724", highlightthickness=0)
@@ -121,7 +127,11 @@ class Playground(tk.Tk):
                 track.append((p[0], p[1]))
                 if len(track) > 7:
                     track.pop(0)
-        for i, track in enumerate(self.trails):
+        self.frame_number += 1
+        if self.frame_number % self.draw_every != 0:
+            self.after(FPS_MS, self.tick)
+            return
+        for i, track in enumerate(self.trails if self.draw_trails else []):
             if len(track) > 1:
                 self.canvas.coords(self.trail_ids[i], *(v for xy in track for v in xy))
                 if not self._trail_visible[i]:
@@ -149,4 +159,11 @@ class Playground(tk.Tk):
         self.after(FPS_MS, self.tick)
 
 if __name__ == "__main__":
-    Playground().mainloop()
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--draw-every", type=int, default=DRAW_EVERY,
+                        help="redraw once per N physics updates (default: 4)")
+    parser.add_argument("--trails", action="store_true", help="enable costly trail rendering")
+    args = parser.parse_args()
+    if not 1 <= args.draw_every <= 60:
+        parser.error("--draw-every must be in [1, 60]")
+    Playground(draw_every=args.draw_every, trails=args.trails).mainloop()
