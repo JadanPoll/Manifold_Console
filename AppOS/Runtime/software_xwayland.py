@@ -124,7 +124,7 @@ def main(argv=None):
         env["XWAYLAND_NO_GLAMOR"] = "1"
         env["LIBGL_ALWAYS_SOFTWARE"] = "1"
         cmd = ["Xwayland", ":" + str(number), "-shm", "-auth", str(auth),
-               "-nolisten", "tcp", "-terminate"]
+               "-nolisten", "tcp"]
         if args.geometry:
             cmd.extend(["-geometry", args.geometry])
         try:
