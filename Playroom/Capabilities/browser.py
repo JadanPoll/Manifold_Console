@@ -10,6 +10,15 @@ import webbrowser
 ROOT = Path(__file__).resolve().parents[2]
 CATALOG = Path(__file__).with_name("catalog.json")
 STATUSES = ("All", "working", "hardware-verified", "research", "idea")
+CHAPTERS = ("All", "Camera & Vision", "Audio & Signals", "Hardware", "Interaction & Play", "Development")
+CHAPTER_DOMAINS = {
+    "Camera & Vision": {"Cameras", "Spatial", "Tracking", "Drawing"},
+    "Audio & Signals": {"Signals", "Filtering", "Audio"},
+    "Hardware": {"Hardware", "Native C"},
+    "Interaction & Play": {"Input", "Interaction", "Games", "Physics"},
+    "Development": {"Performance", "Visualization", "Native C"},
+}
+
 
 def read_catalog(path=CATALOG):
     obj = json.loads(Path(path).read_text(encoding="utf-8"))
@@ -24,10 +33,20 @@ def read_catalog(path=CATALOG):
         ids.add(c["id"])
     return obj["capabilities"]
 
-def search(capabilities, query="", status="All"):
+def chapter_for(capability):
+    if capability.get("chapter") in CHAPTERS[1:]:
+        return capability["chapter"]
+    domains = set(capability.get("domain", ()))
+    for chapter in CHAPTERS[1:]:
+        if domains & CHAPTER_DOMAINS[chapter]:
+            return chapter
+    return "Development"
+
+def search(capabilities, query="", status="All", chapter="All"):
     needle = query.casefold().strip()
     return [c for c in capabilities if
             (status == "All" or c["status"] == status) and
+            (chapter == "All" or chapter_for(c) == chapter) and
             needle in " ".join(str(c.get(k,"")) for k in ("name","summary","domain","id","use_when","keywords","inputs","outputs")).casefold()]
 
 def agent_context(c):
@@ -46,13 +65,17 @@ class Browser(tk.Tk):
         header = ttk.Frame(self, padding=14)
         header.pack(fill="x")
         ttk.Label(header,text="CAPABILITIES",font=("Sans",19,"bold")).pack(anchor="w")
-        ttk.Label(header,text="Search by problem, purpose, or technique. Select a capability to recover how to use it.").pack(anchor="w")
+        ttk.Label(header,text="Browse by chapter, or search across all capabilities.").pack(anchor="w")
         filters = ttk.Frame(self,padding=(14,0,14,12))
         filters.pack(fill="x")
+        self.chapter=tk.StringVar(value="All")
+        ttk.Combobox(filters,textvariable=self.chapter,values=CHAPTERS,
+                     state="readonly",width=21).pack(side="left",padx=(0,10))
         self.query=tk.StringVar()
         ttk.Entry(filters,textvariable=self.query,width=42).pack(side="left",padx=(0,10))
         self.status=tk.StringVar(value="All")
         ttk.Combobox(filters,textvariable=self.status,values=STATUSES,state="readonly",width=20).pack(side="left")
+        self.chapter.trace_add("write",lambda *_:self.populate())
         self.query.trace_add("write",lambda *_:self.populate())
         self.status.trace_add("write",lambda *_:self.populate())
         content=ttk.Panedwindow(self,orient="horizontal")
@@ -75,7 +98,7 @@ class Browser(tk.Tk):
         self.populate()
 
     def populate(self):
-        self.entries=search(self.capabilities,self.query.get(),self.status.get())
+        self.entries=search(self.capabilities,self.query.get(),self.status.get(),self.chapter.get())
         self.listbox.delete(0,tk.END)
         for c in self.entries:
             self.listbox.insert(tk.END,f"{c['name']}  [{c['status']}]")
@@ -91,7 +114,7 @@ class Browser(tk.Tk):
             return
         self.selected=self.entries[picks[0]]
         c=self.selected
-        lines=[c["name"],c["status"].upper(),"",c["summary"],"",
+        lines=[c["name"],chapter_for(c)+" / "+c["status"].upper(),"",c["summary"],"",
                "Use when: "+c.get("use_when", "Explore this capability"),"",
                "Domains: "+", ".join(c["domain"]),
                "Inputs: "+", ".join(c["inputs"]),
