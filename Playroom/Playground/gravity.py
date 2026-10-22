@@ -22,6 +22,9 @@ class Playground(tk.Tk):
         self.draw_every = draw_every
         self.draw_trails = trails
         self.frame_number = 0
+        self._last_particle_bounds = [None] * MAX_PARTICLES
+        self._last_attractor_bounds = [None] * MAX_ATTRACTORS
+        self._last_trails = [None] * MAX_PARTICLES
         self.title("Manifold / Gravity Playground")
         self.resizable(False, False)
         self.canvas = tk.Canvas(self, width=W, height=H, bg="#0d1724", highlightthickness=0)
@@ -82,6 +85,8 @@ class Playground(tk.Tk):
 
     def clear_trails(self):
         self.trails = [[] for _ in self.particles]
+        if hasattr(self, '_last_trails'):
+            self._last_trails = [None] * MAX_PARTICLES
 
     def toggle_pause(self, _event):
         self.paused = not self.paused
@@ -133,7 +138,10 @@ class Playground(tk.Tk):
             return
         for i, track in enumerate(self.trails if self.draw_trails else []):
             if len(track) > 1:
-                self.canvas.coords(self.trail_ids[i], *(v for xy in track for v in xy))
+                points = tuple(round(v) for xy in track for v in xy)
+                if points != self._last_trails[i]:
+                    self.canvas.coords(self.trail_ids[i], *points)
+                    self._last_trails[i] = points
                 if not self._trail_visible[i]:
                     self.canvas.itemconfigure(self.trail_ids[i], state="normal")
                     self._trail_visible[i] = True
@@ -141,7 +149,10 @@ class Playground(tk.Tk):
                 self.canvas.itemconfigure(self.trail_ids[i], state="hidden")
                 self._trail_visible[i] = False
         for i, (sx, sy) in enumerate(self.attractors):
-            self.canvas.coords(self.attractor_ids[i], sx-15, sy-15, sx+15, sy+15)
+            bounds = (round(sx-15), round(sy-15), round(sx+15), round(sy+15))
+            if bounds != self._last_attractor_bounds[i]:
+                self.canvas.coords(self.attractor_ids[i], *bounds)
+                self._last_attractor_bounds[i] = bounds
             if not self._attractor_visible[i]:
                 self.canvas.itemconfigure(self.attractor_ids[i], state="normal")
                 self._attractor_visible[i] = True
@@ -150,7 +161,10 @@ class Playground(tk.Tk):
                 self.canvas.itemconfigure(self.attractor_ids[i], state="hidden")
                 self._attractor_visible[i] = False
         for i, (x, y, vx, vy) in enumerate(self.particles):
-            self.canvas.coords(self.particle_ids[i], x-2, y-2, x+2, y+2)
+            bounds = (round(x-2), round(y-2), round(x+2), round(y+2))
+            if bounds != self._last_particle_bounds[i]:
+                self.canvas.coords(self.particle_ids[i], *bounds)
+                self._last_particle_bounds[i] = bounds
         status = (f"{len(self.particles)} particles · {len(self.attractors)} attractors" +
                   (" · PAUSED" if self.paused else ""))
         if status != self._status_text:
