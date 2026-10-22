@@ -1,0 +1,36 @@
+{
+  "schema_version": 1,
+  "projects": [
+    {
+      "id": "research.hand-tracking",
+      "name": "Hand Tracking & Gesture Input",
+      "chapter": "Camera & Vision",
+      "repository": "https://github.com/JadanPoll/HandActionToGameInput.git",
+      "directory": "HandActionToGameInput",
+      "entry": "HandTrack.py",
+      "state": "legacy-windows-research",
+      "run_policy": "inspect-only",
+      "notes": "Legacy Windows cursor integration; hardware input injection disabled until ported and explicitly armed."
+    },
+    {
+      "id": "research.smash-pose",
+      "name": "3D Motion Super Smash Bros",
+      "chapter": "Interaction & Play",
+      "repository": "https://github.com/JadanPoll/3DMotionSuperSmashBros2.git",
+      "directory": "3DMotionSuperSmashBros2",
+      "entry": "FullCodePutTogether.py",
+      "state": "legacy-experimental",
+      "run_policy": "inspect-only",
+      "notes": "Camera, clustering and game input are coupled; requires decomposition and recorded-frame tests before live launch."
+    },
+    {
+      "id": "research.smash-history",
+      "name": "Smash Motion Original Notes",
+      "chapter": "Interaction & Play",
+      "repository": "https://github.com/JadanPoll/3DMotionSuperSmashBros.git",
+      "directory": "3DMotionSuperSmashBros",
+      "state": "archive",
+      "run_policy": "inspect-only"
+    }
+  ]
+}
