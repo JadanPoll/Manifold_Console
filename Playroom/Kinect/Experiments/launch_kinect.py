@@ -20,6 +20,7 @@ def candidate_interpreters():
     paths = [configured] if configured else []
     paths.extend((
         str(Path.home() / ".venvs/beastgames-kinect/bin/python"),
+        str(Path.home() / "Desktop/PDFlets/.venv/bin/python"),
         str(Path.home() / "Desktop/pdflets_lean_v1_1/.venv/bin/python"),
         sys.executable,
     ))
@@ -30,13 +31,20 @@ def candidate_interpreters():
             yield value
 
 
+def kinect_env():
+    env = os.environ.copy()
+    local_lib = str(Path.home() / ".local/lib")
+    env["LD_LIBRARY_PATH"] = local_lib + (os.pathsep + env["LD_LIBRARY_PATH"] if env.get("LD_LIBRARY_PATH") else "")
+    return env
+
+
 def supports_kinect(python):
     if not Path(python).is_file():
         return False
     try:
         result = subprocess.run(
             [python, "-c", "import freenect, numpy; print('ok')"],
-            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=5)
+            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=5, env=kinect_env())
         return result.returncode == 0
     except (OSError, subprocess.TimeoutExpired):
         return False
@@ -85,7 +93,7 @@ def main(argv=None):
     interpreter, code = check()
     if args.check or code:
         return code
-    os.execv(interpreter, [interpreter, str(SCRIPT)])
+    os.execve(interpreter, [interpreter, str(SCRIPT)], kinect_env())
 
 
 if __name__ == "__main__":
