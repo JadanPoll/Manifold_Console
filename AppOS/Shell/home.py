@@ -28,7 +28,7 @@ class Home(tk.Tk):
         self._running_ids = []
         self._build()
         self.refresh_catalog()
-        self.after(700, self.refresh_status)
+        self.after(700, self._periodic_status)
         self.protocol("WM_DELETE_WINDOW", self.close)
 
     def _label(self, parent, text, size=12, color=FG):
@@ -123,6 +123,10 @@ class Home(tk.Tk):
     def _running_items(self):
         return [item for item in self.supervisor.apps if item.proc.poll() is None]
 
+    def _periodic_status(self):
+        self.refresh_status()
+        self.after(700, self._periodic_status)
+
     def refresh_status(self):
         current = self._running_items()
         signature = tuple((item.proc.pid, item.name) for item in current)
@@ -139,7 +143,6 @@ class Home(tk.Tk):
                 self.running_list.selection_set(self._running_ids.index(selected_pid))
             self._last_status = signature
             self.supervisor.reap_completed()
-        self.after(700, self.refresh_status)
 
     def stop(self, force):
         selection = self.running_list.curselection()
