@@ -13,8 +13,8 @@ DT = 0.035
 MAX_PARTICLES = 48
 MAX_ATTRACTORS = 5
 FPS_MS = 40
-# Drawing is deliberately less frequent than physics on problematic XWayland stacks.
-DRAW_EVERY = 4
+# Optional drawing reduction for problematic XWayland stacks; default remains smooth.
+DRAW_EVERY = 1
 
 class Playground(tk.Tk):
     def __init__(self, draw_every=DRAW_EVERY, trails=False):
@@ -161,7 +161,7 @@ class Playground(tk.Tk):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--draw-every", type=int, default=DRAW_EVERY,
-                        help="redraw once per N physics updates (default: 4)")
+                        help="redraw once per N physics updates (default: 1)")
     parser.add_argument("--trails", action="store_true", help="enable costly trail rendering")
     args = parser.parse_args()
     if not 1 <= args.draw_every <= 60:
