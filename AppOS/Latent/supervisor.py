@@ -1,5 +1,6 @@
 """Minimal Linux supervisor for known AppOS child processes, NOT a sandbox."""
 import os
+import signal
 import subprocess
 import sys
 import time
@@ -39,12 +40,25 @@ class ManagedApp:
                 "rss": process_rss(self.proc.pid) if active else None}
 
     def stop(self, force=False):
+        """Signal the owned POSIX session, not only its initial PID.
+
+        No sandbox guarantee: descendants can create their own sessions.
+        """
         if self.proc.poll() is not None:
             return
-        if force:
+        sig = signal.SIGKILL if force else signal.SIGTERM
+        if os.name == "posix":
+            try:
+                os.killpg(self.proc.pid, sig)
+            except ProcessLookupError:
+                pass
+        elif force:
             self.proc.kill()
         else:
             self.proc.terminate()
+
+    def wait(self, timeout=None):
+        return self.proc.wait(timeout=timeout)
 
 class Supervisor:
     def __init__(self):
@@ -72,3 +86,9 @@ class Supervisor:
 
     def snapshots(self):
         return [app.snapshot() for app in self.apps]
+
+    def reap_completed(self):
+        """Bound retained exited-process history without touching live apps."""
+        finished = [app for app in self.apps if app.proc.poll() is not None]
+        self.apps = [app for app in self.apps if app.proc.poll() is None]
+        return finished
