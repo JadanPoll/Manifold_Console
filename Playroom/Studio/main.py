@@ -48,6 +48,8 @@ class Playroom(tk.Tk):
         self.legend_id = self.canvas.create_text(
             14, 15, text="BLUE: raw    GOLD: EMA-filtered", fill="white", anchor="w")
         self._displayed = {}
+        self._last_draw = 0.0
+        self._last_pointer_status = 0.0
         self.canvas.bind("<Motion>",self.pointer)
         self.status=ttk.Label(self,text="Move pointer over the plot to inspect normalized input.",padding=14)
         self.status.pack(fill="x")
@@ -99,6 +101,10 @@ class Playroom(tk.Tk):
         self.status.config(text="Loaded validated recipe: " + recipe["waveform"])
 
     def pointer(self,e):
+        now = monotonic()
+        if now - self._last_pointer_status < 0.20:
+            return
+        self._last_pointer_status = now
         width=max(1,self.canvas.winfo_width())
         height=max(1,self.canvas.winfo_height())
         self.status.config(text=f"Pointer: x={clamp(2*e.x/width-1):+.3f}  y={clamp(1-2*e.y/height):+.3f}  |  raw={self.last:+.3f}")
@@ -118,6 +124,13 @@ class Playroom(tk.Tk):
             self.signal.filter.alpha=self.alpha.get()
         self.signal.step(value)
         self.last=value
+        # The numerical signal runs every 100 ms, but drawing is optional.
+        # On this XWayland/V3D combination even persistent polyline updates
+        # can congest the shared display server.
+        if monotonic() - self._last_draw < 0.40:
+            self.after(100,self.frame)
+            return
+        self._last_draw = monotonic()
         c=self.canvas
         w=max(100,c.winfo_width()); h=max(100,c.winfo_height())
         geometry = {
@@ -127,7 +140,7 @@ class Playroom(tk.Tk):
                                 (self.signal.smooth, self.smooth_id)):
             samples=list(series)
             if len(samples)>1:
-                step=max(1,(len(samples)+119)//120)
+                step=max(1,(len(samples)+31)//32)
                 coords=[]
                 for i in range(0,len(samples),step):
                     coords.extend((round(i*w/499.0), round((1-clamp(samples[i]))*h/2)))
