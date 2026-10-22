@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "id": "vision.edge.sobel",
+  "name": "Sobel Edge Detection",
+  "version": "0.1.0",
+  "kind": "native-capability",
+  "language": "c11",
+  "requires": [],
+  "build": {
+    "command": [
+      "make"
+    ]
+  },
+  "interface": {
+    "input": "image/gray8",
+    "output": "image/gray8"
+  },
+  "license": "MIT"
+}
