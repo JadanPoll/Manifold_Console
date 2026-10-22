@@ -22,3 +22,16 @@ Prioritize continuity, timely input acknowledgment, clear loading/ready states, 
 ## Deferred
 
 Renderer/toolkit choice; animation scheduling; GPU versus CPU bottleneck measurements; refresh-on-change cache; cross-thread or cross-process state snapshots; predictive UI prefetch. Do not build an entire UI infrastructure to solve a headless demonstration.
+
+## Observed graphics failure and minimum response
+
+On a Raspberry Pi 5, redundant Tk Canvas state updates caused stalls that reproduced in native X11 workloads. The GPU-accelerated shared display path could also delay independent X11 clients. Therefore:
+
+- Publish state changes instead of reasserting unchanged display state; coalesce superseded updates.
+- Keep scientific state authoritative and presentation disposable; skip stale views, never silently skip required samples.
+- Treat graphics operations as potentially blocking, including seemingly asynchronous calls and deferred redraw.
+- Measure *independent observer latency* as well as local frame timings when deciding whether shared rendering offers sufficient isolation.
+- Do not infer that separate CPU threads/processes protect shared GPU or XWayland service latency.
+- Do not introduce a custom renderer, compositor, cgroup manager, or permanent tracing agent without a reproduced requirement and comparison against existing capabilities.
+
+These are observed risks and design constraints, **not** claims that the present single-threaded native demo enforces nonblocking presentation. The next concrete workload should test that property before adding concurrency mechanisms.
