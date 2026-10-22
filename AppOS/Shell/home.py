@@ -25,6 +25,7 @@ class Home(tk.Tk):
         self.catalog = []
         self.selected_id = None
         self._last_status = None
+        self._running_ids = []
         self._build()
         self.refresh_catalog()
         self.after(700, self.refresh_status)
@@ -126,10 +127,18 @@ class Home(tk.Tk):
         current = self._running_items()
         signature = tuple((item.proc.pid, item.name) for item in current)
         if signature != self._last_status:
+            old_selection = self.running_list.curselection()
+            selected_pid = (self._running_ids[old_selection[0]]
+                            if old_selection and old_selection[0] < len(self._running_ids)
+                            else None)
             self.running_list.delete(0, "end")
+            self._running_ids = [item.proc.pid for item in current]
             for item in current:
                 self.running_list.insert("end", f"{item.name} · PID {item.proc.pid}")
+            if selected_pid in self._running_ids:
+                self.running_list.selection_set(self._running_ids.index(selected_pid))
             self._last_status = signature
+            self.supervisor.reap_completed()
         self.after(700, self.refresh_status)
 
     def stop(self, force):
@@ -137,7 +146,11 @@ class Home(tk.Tk):
         current = self._running_items()
         if not selection or selection[0] >= len(current):
             return
-        item = current[selection[0]]
+        target = self._running_ids[selection[0]] if selection[0] < len(self._running_ids) else None
+        item = next((app for app in current if app.proc.pid == target), None)
+        if item is None:
+            self.refresh_status()
+            return
         try:
             item.stop(force=force)
         except OSError as exc:
