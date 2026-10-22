@@ -312,6 +312,46 @@
       ],
       "run_command": "python3 Playroom/Playground/gravity.py",
       "notes": "Toy force field, not calibrated physical gravity. Bounded to 48 particles and 25 redraws/sec; not yet tested on Pi. Space pauses, R resets, C clears trails."
+    },
+    {
+      "id": "research.smash_pose",
+      "name": "Motion-controlled Smash Bros (research)",
+      "chapter": "Interaction & Play",
+      "status": "research",
+      "domain": [
+        "Tracking",
+        "Input",
+        "Games"
+      ],
+      "summary": "Original full-body pose tracking, joint-angle features, clustering and experimental mapping to Smash Bros actions.",
+      "use_when": "Investigate gesture-controlled fighting games, pose transitions, and temporal action recognition.",
+      "keywords": [
+        "Smash Bros",
+        "pose",
+        "DBSCAN",
+        "MediaPipe",
+        "game",
+        "gestures"
+      ],
+      "source": "https://github.com/JadanPoll/3DMotionSuperSmashBros2",
+      "demo": {
+        "kind": "none"
+      },
+      "reference": "Playroom/Research_Campus/RESEARCH_PROJECTS.md",
+      "requires": [
+        "external research checkout",
+        "camera",
+        "platform-specific ML packages"
+      ],
+      "inputs": [
+        "RGB frames",
+        "pose landmarks"
+      ],
+      "outputs": [
+        "joint-angle features",
+        "experimental action labels"
+      ],
+      "notes": "Legacy research, not currently a validated or safe Console launch target; live input injection must remain disabled until ported."
     }
   ]
 }
