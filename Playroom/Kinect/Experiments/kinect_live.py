@@ -79,6 +79,10 @@ class Viewer(tk.Tk):
         self.stop = threading.Event()
         self.latest = queue.Queue(maxsize=1)
         self.last_state = None
+        self._point_bounds = None
+        self._point_visible = False
+        self._cross_geometry = None
+        self._last_message = None
         self.message = tk.StringVar(value="Connecting to Kinect 1473…")
         tk.Label(self, text="KINECT / DEPTH POINT", bg="#edf4f8",
                  fg="#183049", font=("Sans", 18, "bold")).pack(anchor="w", padx=18, pady=(16, 3))
@@ -100,6 +104,11 @@ class Viewer(tk.Tk):
         self.after(200, self.update_display)
         self.protocol("WM_DELETE_WINDOW", self.close)
 
+    def show_message(self, text):
+        if text != self._last_message:
+            self.message.set(text)
+            self._last_message = text
+
     def update_display(self):
         value = None
         try:
@@ -110,20 +119,30 @@ class Viewer(tk.Tk):
         if value is not None and value != self.last_state:
             self.last_state = value
             if value[0] == "error":
-                self.message.set("Capture error: " + value[1])
+                self.show_message("Capture error: " + value[1])
             else:
                 _, stamp, width, height, x, y, depth, valid = value
                 cw, ch = self.canvas.winfo_width(), self.canvas.winfo_height()
-                self.canvas.coords(self.cross_x, cw // 2, 0, cw // 2, ch)
-                self.canvas.coords(self.cross_y, 0, ch // 2, cw, ch // 2)
+                cross = (cw, ch)
+                if cross != self._cross_geometry:
+                    self.canvas.coords(self.cross_x, cw // 2, 0, cw // 2, ch)
+                    self.canvas.coords(self.cross_y, 0, ch // 2, cw, ch // 2)
+                    self._cross_geometry = cross
                 if valid:
                     px, py = round(x * cw / width), round(y * ch / height)
-                    self.canvas.coords(self.point_id, px-9, py-9, px+9, py+9)
-                    self.canvas.itemconfigure(self.point_id, state="normal")
-                    self.message.set(f"Nearest point ({x}, {y}) · raw depth {depth} · {monotonic()-stamp:.1f}s latency")
+                    bounds = (px-9, py-9, px+9, py+9)
+                    if bounds != self._point_bounds:
+                        self.canvas.coords(self.point_id, *bounds)
+                        self._point_bounds = bounds
+                    if not self._point_visible:
+                        self.canvas.itemconfigure(self.point_id, state="normal")
+                        self._point_visible = True
+                    self.show_message(f"Nearest point ({x}, {y}) · raw depth {depth} · {monotonic()-stamp:.1f}s latency")
                 else:
-                    self.canvas.itemconfigure(self.point_id, state="hidden")
-                    self.message.set("No valid depth sample")
+                    if self._point_visible:
+                        self.canvas.itemconfigure(self.point_id, state="hidden")
+                        self._point_visible = False
+                    self.show_message("No valid depth sample")
         if self.winfo_exists():
             self.after(200, self.update_display)
 
