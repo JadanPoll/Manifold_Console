@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "id": "vision.pose.mediapipe",
+  "name": "Pose Tracking",
+  "version": "0.1.0",
+  "kind": "video-capability",
+  "language": "python",
+  "requires": [
+    "mediapipe",
+    "opencv-python",
+    "numpy",
+    "pose_landmarker.task (user provided)"
+  ],
+  "interface": {
+    "input": "video/rgb8",
+    "output": "landmarks/body33-v1"
+  },
+  "build": {
+    "command": []
+  }
+}
