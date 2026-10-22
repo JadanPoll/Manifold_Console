@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "id": "motion.landmarks",
+  "name": "Motion Landmarks & Gestures",
+  "version": "0.1.0",
+  "kind": "native-capability",
+  "language": "c11",
+  "requires": [],
+  "build": {
+    "command": [
+      "make"
+    ]
+  },
+  "interface": {
+    "input": "landmarks/normalized2d-v1",
+    "output": "motion/events-v1"
+  }
+}
