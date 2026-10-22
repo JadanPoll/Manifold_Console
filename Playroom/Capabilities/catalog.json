@@ -352,6 +352,47 @@
         "experimental action labels"
       ],
       "notes": "Legacy research, not currently a validated or safe Console launch target; live input injection must remain disabled until ported."
+    },
+    {
+      "id": "vision.pose.video",
+      "name": "Pose Tracking (Video / Dance)",
+      "chapter": "Camera & Vision",
+      "status": "research",
+      "domain": [
+        "Cameras",
+        "Tracking",
+        "Interaction"
+      ],
+      "summary": "Observe 33 body landmarks overlaid on webcam or prerecorded video with the optional MediaPipe Pose Landmarker task.",
+      "use_when": "Watch body pose and dance movements or inspect pose tracking before designing game controllers.",
+      "keywords": [
+        "pose",
+        "video",
+        "dance",
+        "skeleton",
+        "mediapipe",
+        "camera"
+      ],
+      "source": "Packages/vision.pose.mediapipe/pose_viewer.py",
+      "demo": {
+        "kind": "manual",
+        "command": []
+      },
+      "reference": "Packages/vision.pose.mediapipe/README.md",
+      "requires": [
+        "separate MediaPipe Python environment",
+        "Pose Landmarker .task model",
+        "camera or recorded video"
+      ],
+      "inputs": [
+        "RGB video frames"
+      ],
+      "outputs": [
+        "skeleton overlay",
+        "33 body landmarks (internal)"
+      ],
+      "run_command": "~/.venvs/manifold-pose/bin/python Packages/vision.pose.mediapipe/pose_viewer.py --model /path/to/pose_landmarker_lite.task --video /path/to/dance.mp4",
+      "notes": "Source implementation only, not Pi-validated; not yet exported as Connect stream. Optional package, no input injection."
     }
   ]
 }
