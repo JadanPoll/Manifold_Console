@@ -49,6 +49,9 @@ class Playground(tk.Tk):
                                     outline="#fff1b3", width=2, state="hidden")
             for _ in range(MAX_ATTRACTORS)
         ]
+        self._trail_visible = [False] * MAX_PARTICLES
+        self._attractor_visible = [False] * MAX_ATTRACTORS
+        self._status_text = None
         self.status_id = self.canvas.create_text(
             10, 12, anchor="nw", fill="#a9bbc7", text="")
         self.canvas.bind("<ButtonPress-1>", self.press)
@@ -121,20 +124,28 @@ class Playground(tk.Tk):
         for i, track in enumerate(self.trails):
             if len(track) > 1:
                 self.canvas.coords(self.trail_ids[i], *(v for xy in track for v in xy))
-                self.canvas.itemconfigure(self.trail_ids[i], state="normal")
-            else:
+                if not self._trail_visible[i]:
+                    self.canvas.itemconfigure(self.trail_ids[i], state="normal")
+                    self._trail_visible[i] = True
+            elif self._trail_visible[i]:
                 self.canvas.itemconfigure(self.trail_ids[i], state="hidden")
+                self._trail_visible[i] = False
         for i, (sx, sy) in enumerate(self.attractors):
             self.canvas.coords(self.attractor_ids[i], sx-15, sy-15, sx+15, sy+15)
-            self.canvas.itemconfigure(self.attractor_ids[i], state="normal")
+            if not self._attractor_visible[i]:
+                self.canvas.itemconfigure(self.attractor_ids[i], state="normal")
+                self._attractor_visible[i] = True
         for i in range(len(self.attractors), MAX_ATTRACTORS):
-            self.canvas.itemconfigure(self.attractor_ids[i], state="hidden")
+            if self._attractor_visible[i]:
+                self.canvas.itemconfigure(self.attractor_ids[i], state="hidden")
+                self._attractor_visible[i] = False
         for i, (x, y, vx, vy) in enumerate(self.particles):
             self.canvas.coords(self.particle_ids[i], x-2, y-2, x+2, y+2)
-        self.canvas.itemconfigure(
-            self.status_id,
-            text=f"{len(self.particles)} particles · {len(self.attractors)} attractors" +
-                 (" · PAUSED" if self.paused else ""))
+        status = (f"{len(self.particles)} particles · {len(self.attractors)} attractors" +
+                  (" · PAUSED" if self.paused else ""))
+        if status != self._status_text:
+            self.canvas.itemconfigure(self.status_id, text=status)
+            self._status_text = status
         self.after(FPS_MS, self.tick)
 
 if __name__ == "__main__":
