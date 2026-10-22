@@ -41,6 +41,13 @@ class Playroom(tk.Tk):
         ttk.Button(controls, text="Copy LLM Context", command=self.copy_context).grid(row=1,column=6,padx=8)
         self.canvas=tk.Canvas(self,bg="#101f34",height=290,highlightthickness=0)
         self.canvas.pack(fill="both",expand=True,padx=14,pady=10)
+        # Persistent display resources: only geometry changes during animation.
+        self.axis_id = self.canvas.create_line(0, 0, 1, 0, fill="#47617b", dash=(3,5))
+        self.raw_id = self.canvas.create_line(0, 0, 1, 0, fill="#77d8ff", width=2)
+        self.smooth_id = self.canvas.create_line(0, 0, 1, 0, fill="#fbd36e", width=2)
+        self.legend_id = self.canvas.create_text(
+            14, 15, text="BLUE: raw    GOLD: EMA-filtered", fill="white", anchor="w")
+        self._displayed = {}
         self.canvas.bind("<Motion>",self.pointer)
         self.status=ttk.Label(self,text="Move pointer over the plot to inspect normalized input.",padding=14)
         self.status.pack(fill="x")
@@ -112,18 +119,24 @@ class Playroom(tk.Tk):
         self.signal.step(value)
         self.last=value
         c=self.canvas
-        c.delete("all")
         w=max(100,c.winfo_width()); h=max(100,c.winfo_height())
-        c.create_line(0,h/2,w,h/2,fill="#47617b",dash=(3,5))
-        for series,color in ((self.signal.raw,"#77d8ff"),(self.signal.smooth,"#fbd36e")):
+        geometry = {
+            self.axis_id: (0, h//2, w, h//2)
+        }
+        for series, line_id in ((self.signal.raw, self.raw_id),
+                                (self.signal.smooth, self.smooth_id)):
             samples=list(series)
             if len(samples)>1:
-                coords=[]
                 step=max(1,(len(samples)+119)//120)
+                coords=[]
                 for i in range(0,len(samples),step):
-                    coords.extend((i*w/499.0, (1-clamp(samples[i]))*h/2))
-                c.create_line(*coords,fill=color,width=2,smooth=False)
-        c.create_text(14,15,text="BLUE: raw    GOLD: EMA-filtered",fill="white",anchor="w")
+                    coords.extend((round(i*w/499.0), round((1-clamp(samples[i]))*h/2)))
+                geometry[line_id] = tuple(coords)
+        # Suppress identical requests and leave persistent resources intact.
+        for line_id, coords in geometry.items():
+            if self._displayed.get(line_id) != coords:
+                c.coords(line_id, *coords)
+                self._displayed[line_id] = coords
         self.after(100,self.frame)
 
 if __name__=="__main__":
