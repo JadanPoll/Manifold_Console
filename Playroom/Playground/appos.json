@@ -1,0 +1,16 @@
+{
+  "schema_version": 1,
+  "id": "manifold.gravity",
+  "name": "Gravity Playground",
+  "entry": {
+    "command": [
+      "python3",
+      "gravity.py"
+    ]
+  },
+  "capabilities": [],
+  "ui": {
+    "integration": "external-window",
+    "category": "Playroom"
+  }
+}
