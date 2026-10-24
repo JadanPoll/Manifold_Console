@@ -8,7 +8,12 @@ MANIFEST = "appos.json"
 def discover(root=ROOT):
     found = []
     for path in sorted(Path(root).rglob(MANIFEST)):
-        if any(part.startswith(".") for part in path.relative_to(root).parts):
+        parts = path.relative_to(root).parts
+        # Research checkouts are source references, not installed AppOS apps.
+        # Their manifests must never enter Home's executable catalog.
+        if any(part.startswith(".") for part in parts):
+            continue
+        if parts[:3] == ("Playroom", "Research_Campus", "external"):
             continue
         try:
             data = json.loads(path.read_text(encoding="utf-8"))
