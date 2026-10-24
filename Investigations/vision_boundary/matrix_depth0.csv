@@ -1,0 +1,9 @@
+from/to,U,R,C,H,D,P,M,X
+U,C:self-belief update or forgetting,C:clones optional checkout,A:requests rescan,A:selects launch/stop,U:direct USB actions out of model,A:runs viewer from CLI,C:invokes make/test separately,I:no Connect user interface
+R,I:no automatic user notification,C:checkout may acquire manifest,C:external manifest found by recursive scan,I:checkout alone does not spawn apps,I:no direct camera action,I:not imported by current pose viewer,I:no automatic integration,I:no Connect implementation
+C,C:entries affect user's listing,C:directory results depend on checkout,A:rescans filesystem,A:provides manifest to Home,I:scanner never opens camera,I:package manifest is not Home appos manifest,I:scanner never runs kernels,I:no runtime Connect publication
+H,A:shows child state to operator,I:supervisor does not mutate checkout,C:manifests scanned by Home,A:launch/stop/reap children,I:no direct camera API,I:Pose package has no appos launch manifest,I:no direct motion invocation,I:no Connect routing
+D,U:device use can be externally observed,I:device cannot mutate Git checkout,I:no scanner mutation,I:no Home calls from device,C:device may deny second open,C:frames delivered if available,I:no native motion wiring,I:no Connect stream
+P,A:visual overlay observed,I:no checkout mutation,I:no scanner calls,"I:current Pose viewer launched directly, not supervised",A:opens/releases capture,A:synchronous capture/infer/display loop,I:no motion-core calls,I:no pose publishing
+M,U:reports CLI test output,I:no research checkout access,I:no catalog calls,I:no supervisor calls,I:does not open video device,I:no calls into Pose viewer,A:processes caller-supplied landmarks,I:no Connect API
+X,I:no operational output,I:no checkout operations,I:no discovery operations,I:no Home operations,I:no device broker,I:no pose subscriptions,I:no motion publication,I:runtime not implemented
