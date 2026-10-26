@@ -33,5 +33,15 @@ class KinectLauncherTests(unittest.TestCase):
             self.assertEqual(launch_kinect.main(["--check"]), 2)
 
 
+    def test_depth_image_uses_existing_kinect_stack_not_opencv(self):
+        with patch.object(launch_kinect, "check", return_value=("/fake/kinect-python", 0)) as check, \
+             patch.object(launch_kinect.os, "execve") as execute:
+            launch_kinect.main(["--mode", "depth"])
+            check.assert_called_once_with(require_native=False)
+            args = execute.call_args.args
+            self.assertEqual(args[0], "/fake/kinect-python")
+            self.assertIn("kinect_depth_tk.py", args[1][1])
+            self.assertEqual(args[1][-2:], ["--mode", "depth"])
+
 if __name__ == "__main__":
     unittest.main()
