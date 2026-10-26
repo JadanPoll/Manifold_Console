@@ -27,6 +27,7 @@ MODEL = Path.home() / ".local/share/manifold/models/pose_landmarker_lite.task"
 MODEL_URL = ("https://storage.googleapis.com/mediapipe-models/pose_landmarker/"
              "pose_landmarker_lite/float16/1/pose_landmarker_lite.task")
 BAZELISK_VERSION = "v1.30.0"
+RULES_JAVA_COMPAT = "7.12.2"
 _ACTIVE = None
 
 def _stop_child(_signum=None, _frame=None):
@@ -146,6 +147,22 @@ def ensure_source():
     if run(["git", "checkout", "--detach", PIN], CACHE).returncode:
         raise SystemExit("Could not select pinned MediaPipe revision.")
 
+def apply_build_compatibility_patches():
+    """Minimal build-only compatibility patches for the pinned upstream tree."""
+    module = CACHE / "MODULE.bazel"
+    text = module.read_text(encoding="utf-8")
+    old = 'bazel_dep(name = "rules_java", version = "7.10.0")'
+    old_override = 'module_name = "rules_java",\n    version = "7.10.0",'
+    if old in text:
+        print("Applying Bazel Java-toolchain compatibility fix (rules_java 7.10.0 -> "
+              + RULES_JAVA_COMPAT + ")…", flush=True)
+        text = text.replace(old,
+            'bazel_dep(name = "rules_java", version = "' + RULES_JAVA_COMPAT + '")')
+        text = text.replace(old_override,
+            'module_name = "rules_java",\n    version = "' + RULES_JAVA_COMPAT + '",')
+        module.write_text(text, encoding="utf-8")
+
+
 def install_overlay():
     target = CACHE / "manifold"
     target.mkdir(exist_ok=True)
@@ -224,6 +241,7 @@ def main():
     if not command("git"):
         raise SystemExit("Git is required to obtain MediaPipe source.")
     ensure_source()
+    apply_build_compatibility_patches()
     install_overlay()
     ensure_model(args.download_model)
     if not args.source_only:
