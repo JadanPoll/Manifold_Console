@@ -26,6 +26,14 @@ class CameraEnvironmentTests(unittest.TestCase):
                           return_value=SimpleNamespace(returncode=1)):
             self.assertEqual(camera_env.working_python(), (None, 1))
 
+    def test_selected_camera_environment_is_remembered(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            config=Path(tmp)/"camera.json"
+            with patch.object(camera_env, "PREFERENCE", config):
+                camera_env.remember_python("/some/working/camera-python")
+                self.assertEqual(camera_env.remembered_python(),
+                                 "/some/working/camera-python")
+
     def test_explicit_setup_only_uses_private_environment(self):
         with tempfile.TemporaryDirectory() as tmp:
             target = Path(tmp) / "manifold-camera"
