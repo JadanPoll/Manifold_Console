@@ -13,6 +13,7 @@ import shutil
 import subprocess
 import sys
 import urllib.request
+import hashlib
 
 ROOT = Path(__file__).resolve().parents[2]
 HERE = Path(__file__).resolve().parent
@@ -23,6 +24,7 @@ INCLUDE = Path.home() / ".local/include/manifold"
 MODEL = Path.home() / ".local/share/manifold/models/pose_landmarker_lite.task"
 MODEL_URL = ("https://storage.googleapis.com/mediapipe-models/pose_landmarker/"
              "pose_landmarker_lite/float16/1/pose_landmarker_lite.task")
+BAZELISK_VERSION = "v1.30.0"
 
 def run(argv, cwd=None):
     print("+", " ".join(map(str, argv)), flush=True)
@@ -30,6 +32,33 @@ def run(argv, cwd=None):
 
 def command(name):
     return shutil.which(name)
+
+def ensure_bazelisk():
+    existing = command("bazelisk") or command("bazel")
+    if existing:
+        return existing
+    machine = platform.machine().lower()
+    arch = "arm64" if machine in ("aarch64", "arm64") else "amd64" if machine in ("x86_64", "amd64") else None
+    if not arch:
+        raise SystemExit("Native Pose does not yet have an automatic Bazelisk setup for " + machine)
+    bindir = Path.home() / ".local/bin"
+    bindir.mkdir(parents=True, exist_ok=True)
+    target = bindir / "bazelisk"
+    base = f"https://github.com/bazelbuild/bazelisk/releases/download/{BAZELISK_VERSION}/bazelisk-linux-{arch}"
+    print("Preparing the user-space build tool…", flush=True)
+    with urllib.request.urlopen(base + ".sha256", timeout=30) as response:
+        expected = response.read().decode().strip().split()[0]
+    tmp = target.with_suffix(".part")
+    try:
+        urllib.request.urlretrieve(base, tmp)
+        actual = hashlib.sha256(tmp.read_bytes()).hexdigest()
+        if actual != expected:
+            raise SystemExit("Downloaded Bazelisk checksum did not match.")
+        tmp.chmod(0o755)
+        tmp.replace(target)
+    finally:
+        tmp.unlink(missing_ok=True)
+    return str(target)
 
 def ensure_source():
     CACHE.parent.mkdir(parents=True, exist_ok=True)
@@ -67,12 +96,7 @@ def ensure_model(download):
         raise SystemExit("Could not download pose model: " + str(exc))
 
 def build():
-    bazel = command("bazelisk") or command("bazel")
-    if not bazel:
-        raise SystemExit(
-            "Native Pose needs Bazel/Bazelisk to compile MediaPipe. "
-            "Nothing was changed. Install Bazelisk in your user account, then run this again."
-        )
+    bazel = ensure_bazelisk()
     result = run([
         bazel, "build",
         "--define", "MEDIAPIPE_DISABLE_GPU=1",
