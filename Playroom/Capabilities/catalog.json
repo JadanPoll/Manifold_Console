@@ -2,6 +2,55 @@
   "schema_version": 1,
   "capabilities": [
     {
+      "id": "camera.lab",
+      "name": "Camera Lab — Plug In & Explore",
+      "chapter": "Camera & Vision",
+      "status": "research",
+      "domain": [
+        "Cameras",
+        "Tracking",
+        "Visualization"
+      ],
+      "summary": "One window for webcam/video preview, edge detection, motion, Kinect depth, and optional MediaPipe body-pose tracking.",
+      "source": "Applications/CameraLab/lab.py",
+      "demo": {
+        "kind": "local",
+        "command": [
+          "python3",
+          "Applications/CameraLab/lab.py"
+        ]
+      },
+      "reference": "Applications/CameraLab/README.md",
+      "requires": [
+        "Tkinter",
+        "OpenCV + NumPy for ordinary webcam tools",
+        "Kinect freenect environment or MediaPipe .task only for those optional modes"
+      ],
+      "inputs": [
+        "webcam or video file",
+        "optional Kinect depth",
+        "optional pose model"
+      ],
+      "outputs": [
+        "interactive video and filters",
+        "depth nearest-point view",
+        "optional skeleton overlay"
+      ],
+      "notes": "Launches only on user action; capture may require camera permissions; source committed, not yet checked on Pi. No Connect publishing.",
+      "use_when": "Plug in a camera, visualize its output and immediately try edges, motion, and pose tracking without creating an application.",
+      "keywords": [
+        "webcam",
+        "camera",
+        "video",
+        "kinect",
+        "pose",
+        "dance",
+        "edges",
+        "motion"
+      ],
+      "run_command": "python3 Applications/CameraLab/lab.py"
+    },
+    {
       "id": "signal.synthetic",
       "name": "Synthetic signal lab",
       "status": "working",
