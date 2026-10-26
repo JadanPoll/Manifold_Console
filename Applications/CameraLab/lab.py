@@ -259,6 +259,11 @@ class CameraLab(tk.Tk):
         self.record(f"START {name}: {' '.join(map(str, command))}")
 
     def stop(self, switch=False):
+        if not switch:
+            # The user's Stop always cancels any queued launch/probe as well.
+            self.next_job=None
+            self.pending_camera=None
+            self.generation+=1
         if not self.proc or self.proc.poll() is not None:
             if not switch:
                 self.status.set("Nothing is running. Choose an experiment.")
@@ -295,6 +300,8 @@ class CameraLab(tk.Tk):
         return None
 
     def camera_request(self, name, args):
+        self.fix_button.pack_forget()
+        self.choose_button.pack_forget()
         self.generation+=1
         gen=self.generation
         self.pending_camera=(name,args)
@@ -317,12 +324,16 @@ class CameraLab(tk.Tk):
             self.camera_request("Video preview", ["--video",file])
 
     def kinect(self, mode):
+        self.fix_button.pack_forget()
+        self.choose_button.pack_forget()
         self.generation+=1
         self.pending_camera=None
         self.start("Kinect "+("nearest point" if mode=="point" else mode),
                    [sys.executable,"-u",str(KINECT),"--mode",mode],"kinect")
 
     def check_kinect(self):
+        self.fix_button.pack_forget()
+        self.choose_button.pack_forget()
         self.generation+=1
         self.start("Kinect connection check",
                    [sys.executable,"-u",str(KINECT),"--check"],"preflight")
@@ -352,6 +363,8 @@ class CameraLab(tk.Tk):
             index=self.camera_id()
             if index is None: return
             args.extend(["--camera",str(index)])
+        self.fix_button.pack_forget()
+        self.choose_button.pack_forget()
         self.generation+=1
         gen=self.generation
         self.status.set("Checking whether body tracking is ready…")
