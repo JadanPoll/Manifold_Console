@@ -274,11 +274,27 @@ def patch_compile_time_string_for_gcc():
         print("MediaPipe compile-time string compatibility fix already present.", flush=True)
 
 
+def patch_opencv_soname():
+    """MediaPipe's OpenCV 4.10 source rule expects .so.4.10; OpenCV emits .so.410."""
+    build_file = CACHE / "third_party/BUILD"
+    if not build_file.is_file():
+        return
+    text = build_file.read_text(encoding="utf-8")
+    old = 'OPENCV_SO_VERSION = "4.10"'
+    new = 'OPENCV_SO_VERSION = "410"'
+    if old in text:
+        build_file.write_text(text.replace(old, new), encoding="utf-8")
+        print("Corrected OpenCV 4.10 Linux SONAME expectation (.so.410).", flush=True)
+    elif new in text:
+        print("OpenCV SONAME compatibility fix already present.", flush=True)
+
+
 def build():
     bazel = ensure_bazelisk()
     patch_litert_for_gcc(bazel)
     patch_kleidiai_for_gcc(bazel)
     patch_compile_time_string_for_gcc()
+    patch_opencv_soname()
     result = run([
         bazel, "build",
         "--define", "MEDIAPIPE_DISABLE_GPU=1",
