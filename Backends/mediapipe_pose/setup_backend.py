@@ -14,6 +14,8 @@ import subprocess
 import sys
 import urllib.request
 import hashlib
+import signal
+import time
 
 ROOT = Path(__file__).resolve().parents[2]
 HERE = Path(__file__).resolve().parent
@@ -25,10 +27,81 @@ MODEL = Path.home() / ".local/share/manifold/models/pose_landmarker_lite.task"
 MODEL_URL = ("https://storage.googleapis.com/mediapipe-models/pose_landmarker/"
              "pose_landmarker_lite/float16/1/pose_landmarker_lite.task")
 BAZELISK_VERSION = "v1.30.0"
+_ACTIVE = None
+
+def _stop_child(_signum=None, _frame=None):
+    global _ACTIVE
+    child = _ACTIVE
+    if child and child.poll() is None:
+        try:
+            os.killpg(child.pid, signal.SIGTERM)
+            child.wait(timeout=5)
+        except (ProcessLookupError, subprocess.TimeoutExpired):
+            try:
+                os.killpg(child.pid, signal.SIGKILL)
+            except ProcessLookupError:
+                pass
+    raise SystemExit(130)
+
+signal.signal(signal.SIGTERM, _stop_child)
+signal.signal(signal.SIGINT, _stop_child)
 
 def run(argv, cwd=None):
+    global _ACTIVE
     print("+", " ".join(map(str, argv)), flush=True)
-    return subprocess.run(list(map(str, argv)), cwd=cwd, check=False)
+    child = subprocess.Popen(list(map(str, argv)), cwd=cwd, start_new_session=True)
+    _ACTIVE = child
+    try:
+        return subprocess.CompletedProcess(argv, child.wait())
+    finally:
+        _ACTIVE = None
+
+def lock_holder(lock):
+    """Return PID currently holding this exact lock file, if visible in /proc."""
+    try:
+        target = lock.resolve()
+    except OSError:
+        return None
+    proc = Path("/proc")
+    if not proc.is_dir():
+        return None
+    for entry in proc.iterdir():
+        if not entry.name.isdigit():
+            continue
+        fd_dir = entry / "fd"
+        try:
+            fds = list(fd_dir.iterdir())
+        except OSError:
+            continue
+        for fd in fds:
+            try:
+                if fd.resolve() == target:
+                    return int(entry.name)
+            except OSError:
+                continue
+    return None
+
+def recover_git_lock():
+    lock = CACHE / ".git/index.lock"
+    if not lock.exists():
+        return
+    holder = lock_holder(lock)
+    if holder:
+        print("A previous MediaPipe download is still finishing; waiting for it to release the source tree…", flush=True)
+        for _ in range(30):
+            time.sleep(1)
+            if not lock.exists():
+                return
+            if lock_holder(lock) is None:
+                break
+        if lock.exists() and lock_holder(lock):
+            raise SystemExit(
+                "The previous MediaPipe setup is still using the source tree. "
+                "Close that setup or wait a moment, then press Set up body tracking again."
+            )
+    if lock.exists():
+        print("Recovering from an interrupted earlier setup…", flush=True)
+        lock.unlink()
 
 def command(name):
     return shutil.which(name)
@@ -67,6 +140,7 @@ def ensure_source():
             raise SystemExit("MediaPipe cache exists but is not a Git checkout: " + str(CACHE))
         if run(["git", "clone", "https://github.com/google-ai-edge/mediapipe.git", CACHE]).returncode:
             raise SystemExit("Could not download MediaPipe source.")
+    recover_git_lock()
     if run(["git", "fetch", "--depth", "1", "origin", PIN], CACHE).returncode:
         raise SystemExit("Could not fetch pinned MediaPipe revision.")
     if run(["git", "checkout", "--detach", PIN], CACHE).returncode:
