@@ -219,9 +219,38 @@ def patch_litert_for_gcc(bazel):
         print("LiteRT ARM/GCC compatibility fix already present.", flush=True)
 
 
+def patch_kleidiai_for_gcc(bazel):
+    """Work around a GCC 12 AArch64 vectorizer ICE in one KleidiAI BF16 packer."""
+    if platform.machine().lower() not in ("aarch64", "arm64"):
+        return
+    gcc = command("gcc")
+    if not gcc:
+        return
+    try:
+        version = capture([gcc, "-dumpfullversion"])
+    except (OSError, subprocess.CalledProcessError):
+        version = ""
+    if not version.startswith("12."):
+        return
+
+    output_base = Path(capture([bazel, "info", "output_base"], CACHE))
+    matches = list((output_base / "external").glob(
+        "KleidiAI*/kai/ukernels/matmul/pack/kai_lhs_quant_pack_qai8dxp_bf16_neon.c"
+    ))
+    for source in matches:
+        text = source.read_text(encoding="utf-8")
+        pragma = '#pragma GCC optimize("no-tree-vectorize")\n'
+        if pragma not in text:
+            source.write_text(pragma + text, encoding="utf-8")
+            print("Applied Raspberry Pi GCC 12 compatibility fix to KleidiAI BF16 packer.", flush=True)
+        else:
+            print("KleidiAI GCC 12 compatibility fix already present.", flush=True)
+
+
 def build():
     bazel = ensure_bazelisk()
     patch_litert_for_gcc(bazel)
+    patch_kleidiai_for_gcc(bazel)
     result = run([
         bazel, "build",
         "--define", "MEDIAPIPE_DISABLE_GPU=1",
