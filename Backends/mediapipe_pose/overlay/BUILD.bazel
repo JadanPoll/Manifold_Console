@@ -2,8 +2,10 @@ package(default_visibility = ["//visibility:public"])
 
 cc_binary(
     name = "libmanifold_pose.so",
-    srcs = ["manifold_pose.cc"],
-    hdrs = ["manifold_pose.h"],
+    srcs = [
+        "manifold_pose.cc",
+        "manifold_pose.h",
+    ],
     copts = ["-std=c++20"],
     linkshared = True,
     deps = [
