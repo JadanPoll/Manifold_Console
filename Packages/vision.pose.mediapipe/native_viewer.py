@@ -45,7 +45,10 @@ def load_backend():
                     f"Native body tracking runtime is incomplete ({matches[0].name}): {exc}"
                 )
 
-    lib=ctypes.CDLL(str(LIB))
+    try:
+        lib=ctypes.CDLL(str(LIB))
+    except OSError as exc:
+        raise SystemExit("Native body tracking runtime could not load: " + str(exc))
     lib.mf_pose_create.argtypes=[ctypes.c_char_p]
     lib.mf_pose_create.restype=ctypes.c_void_p
     lib.mf_pose_process_rgb.argtypes=[ctypes.c_void_p,ctypes.POINTER(ctypes.c_uint8),
