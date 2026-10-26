@@ -7,6 +7,7 @@ import ctypes
 from pathlib import Path
 import sys
 import time
+import os
 
 LIB = Path.home() / ".local/lib/manifold/libmanifold_pose.so"
 DEFAULT_MODEL = Path.home() / ".local/share/manifold/models/pose_landmarker_lite.task"
@@ -29,24 +30,24 @@ def load_backend():
     if not LIB.is_file():
         raise SystemExit("Native body tracking is not set up yet.")
 
-    # MediaPipe's private OpenCV build lives beside the Manifold backend.
-    # Preload in dependency-friendly order so no system OpenCV installation
-    # or LD_LIBRARY_PATH configuration is required.
+    # The private OpenCV libraries are installed beside libmanifold_pose.so.
+    # ELF resolves a library's *dependencies* using the process loader path,
+    # not the directory of an absolute dlopen() path. Re-exec once so the
+    # loader sees this directory from process start.
     runtime_dir = LIB.parent
-    order = ("core", "imgproc", "imgcodecs", "video", "features2d",
-             "calib3d", "videoio", "highgui")
-    for module in order:
-        matches = sorted(runtime_dir.glob(f"libopencv_{module}.so.*"))
-        if matches:
-            try:
-                ctypes.CDLL(str(matches[0]), mode=ctypes.RTLD_GLOBAL)
-            except OSError as exc:
-                raise SystemExit(
-                    f"Native body tracking runtime is incomplete ({matches[0].name}): {exc}"
-                )
+    marker = "MANIFOLD_POSE_RUNTIME_READY"
+    if os.environ.get(marker) != "1":
+        env = os.environ.copy()
+        current = env.get("LD_LIBRARY_PATH", "")
+        parts = [str(runtime_dir)]
+        if current:
+            parts.append(current)
+        env["LD_LIBRARY_PATH"] = ":".join(parts)
+        env[marker] = "1"
+        os.execve(sys.executable, [sys.executable, *sys.argv], env)
 
     try:
-        lib=ctypes.CDLL(str(LIB))
+        lib=ctypes.CDLL(str(LIB), mode=ctypes.RTLD_GLOBAL)
     except OSError as exc:
         raise SystemExit("Native body tracking runtime could not load: " + str(exc))
     lib.mf_pose_create.argtypes=[ctypes.c_char_p]
