@@ -19,6 +19,9 @@ ROOT = Path(__file__).resolve().parents[2]
 STUDIO = ROOT / "Applications/CameraLab/studio.py"
 KINECT = ROOT / "Playroom/Kinect/Experiments/launch_kinect.py"
 POSE = ROOT / "Packages/vision.pose.mediapipe/pose_viewer.py"
+NATIVE_POSE = ROOT / "Packages/vision.pose.mediapipe/native_viewer.py"
+POSE_SETUP = ROOT / "Backends/mediapipe_pose/setup_backend.py"
+POSE_LIBRARY = Path.home() / ".local/lib/manifold/libmanifold_pose.so"
 POSE_MODEL = Path.home() / ".local/share/manifold/models/pose_landmarker_lite.task"
 
 
@@ -78,6 +81,7 @@ class CameraLab(tk.Tk):
         ttk.Button(line, text="Track my body", command=lambda:self.pose(False)).pack(side="left", padx=3)
         ttk.Button(line, text="Track a video", command=lambda:self.pose(True)).pack(side="left", padx=3)
         ttk.Button(line, text="Choose pose model…", command=self.pick_model).pack(side="left", padx=3)
+        ttk.Button(line, text="Set up body tracking", command=self.setup_pose).pack(side="left", padx=3)
 
         feedback = ttk.LabelFrame(root, text="What's happening", padding=12)
         feedback.pack(fill="x", pady=(12,5))
@@ -156,8 +160,8 @@ class CameraLab(tk.Tk):
                         self.record(f"Using an existing environment for {kind}: {python}")
                         self.fix_button.pack_forget()
                         self.choose_button.pack_forget()
-                        script = STUDIO if kind == "camera" else POSE
-                        self.start(name, [python, "-u", str(script), *args], kind)
+                        script = STUDIO if kind == "camera" else NATIVE_POSE if kind == "native_pose" else POSE
+                        self.start(name, [python, "-u", str(script), *args], "pose" if kind in ("pose","native_pose") else kind)
                     elif kind == "camera":
                         self.pending_camera=(name,args)
                         self.status.set(
@@ -214,6 +218,9 @@ class CameraLab(tk.Tk):
             else:
                 self.status.set("Kinect check couldn't finish. Check the cable, "
                                 "then try 'Show Kinect depth' or open troubleshooting details.")
+        elif kind == "pose_setup" and code == 0:
+            self.model.set(str(Path.home() / ".local/share/manifold/models/pose_landmarker_lite.task"))
+            self.status.set("Body tracking is ready. Choose 'Track my body' to start.")
         elif code == 0:
             self.status.set(f"{name} closed. Choose another experiment.")
         elif "no module named 'cv2'" in lines or "opencv" in lines and "missing" in lines:
@@ -343,12 +350,6 @@ class CameraLab(tk.Tk):
 
     def pose(self, file_mode):
         model=Path(self.model.get()).expanduser()
-        if not model.is_file():
-            self.status.set("Body tracking needs a Pose Landmarker model file. "
-                            "Choose 'Choose pose model…' to find it. "
-                            "Other modes work without this file.")
-            self.record("Pose model not found: "+str(model))
-            return
         args=["--model",str(model)]
         if file_mode:
             file=filedialog.askopenfilename(parent=self, title="Select a dance video",
@@ -359,15 +360,43 @@ class CameraLab(tk.Tk):
             index=self.camera_id()
             if index is None: return
             args.extend(["--camera",str(index)])
-        self.fix_button.pack_forget()
-        self.choose_button.pack_forget()
+
+        if POSE_LIBRARY.is_file() and model.is_file():
+            self.generation+=1
+            gen=self.generation
+            self.status.set("Opening native body tracking…")
+            def probe_native_ui():
+                python,tried=working_python(check=("cv2","numpy"))
+                self.offer(("probe",gen,"native_pose","Body tracking",args,python,tried))
+            threading.Thread(target=probe_native_ui,daemon=True).start()
+            return
+
+        if not model.is_file():
+            self.status.set("Body tracking isn't set up yet. Click 'Set up body tracking'; "
+                            "the rest of Camera Lab still works.")
+            self.record("Pose model not found: "+str(model))
+            return
+
         self.generation+=1
         gen=self.generation
-        self.status.set("Checking whether body tracking is ready…")
-        def probe():
+        self.status.set("Native body tracking isn't built yet. Checking for an older compatible setup…")
+        def probe_legacy():
             python,tried=working_python(check=("mediapipe","cv2","numpy"))
             self.offer(("probe",gen,"pose","Body tracking",args,python,tried))
-        threading.Thread(target=probe,daemon=True).start()
+        threading.Thread(target=probe_legacy,daemon=True).start()
+
+    def setup_pose(self):
+        if self.proc and self.proc.poll() is None:
+            self.next_job=("Body tracking setup",
+                           [sys.executable,"-u",str(POSE_SETUP),"--download-model"],
+                           "pose_setup")
+            self.stop(switch=True)
+            return
+        self.start("Body tracking setup",
+                   [sys.executable,"-u",str(POSE_SETUP),"--download-model"],
+                   "pose_setup")
+        self.status.set("Preparing native body tracking. This first setup compiles MediaPipe "
+                        "in your user account and can take a while; Camera Lab will show the build output.")
 
     def setup_camera(self):
         if self.setup_active:
