@@ -221,6 +221,12 @@ class CameraLab(tk.Tk):
         elif kind == "pose_setup" and code == 0:
             self.model.set(str(Path.home() / ".local/share/manifold/models/pose_landmarker_lite.task"))
             self.status.set("Body tracking is ready. Choose 'Track my body' to start.")
+        elif kind == "pose_setup" and code == 130:
+            self.status.set("Body tracking setup was canceled cleanly. Press 'Set up body tracking' "
+                            "whenever you want to continue.")
+        elif kind == "pose_setup" and ("index.lock" in lines or "previous mediapipe setup" in lines):
+            self.status.set("An earlier setup was interrupted. Camera Lab will recover the cached "
+                            "source on the next setup attempt; no manual Git cleanup should be needed.")
         elif code == 0:
             self.status.set(f"{name} closed. Choose another experiment.")
         elif "no module named 'cv2'" in lines or "opencv" in lines and "missing" in lines:
@@ -386,6 +392,10 @@ class CameraLab(tk.Tk):
         threading.Thread(target=probe_legacy,daemon=True).start()
 
     def setup_pose(self):
+        if self.proc and self.proc.poll() is None and self.proc_kind == "pose_setup":
+            self.status.set("Body tracking setup is already running. You can keep using the "
+                            "What's happening pane; pressing setup again isn't necessary.")
+            return
         if self.proc and self.proc.poll() is None:
             self.next_job=("Body tracking setup",
                            [sys.executable,"-u",str(POSE_SETUP),"--download-model"],
@@ -395,8 +405,8 @@ class CameraLab(tk.Tk):
         self.start("Body tracking setup",
                    [sys.executable,"-u",str(POSE_SETUP),"--download-model"],
                    "pose_setup")
-        self.status.set("Preparing native body tracking. This first setup compiles MediaPipe "
-                        "in your user account and can take a while; Camera Lab will show the build output.")
+        self.status.set("Preparing body tracking. The first setup downloads and compiles the "
+                        "native backend in your account; you can follow progress here.")
 
     def setup_camera(self):
         if self.setup_active:
