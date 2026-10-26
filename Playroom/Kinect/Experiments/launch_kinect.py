@@ -11,7 +11,7 @@ import sys
 HERE = Path(__file__).resolve().parent
 ROOT = HERE.parents[2]
 SCRIPT = HERE / "kinect_live.py"
-DEPTH_STUDIO = HERE / "kinect_depth_studio.py"
+DEPTH_STUDIO = HERE / "kinect_depth_tk.py"
 NATIVE = ROOT / "AppOS/Native/build/libmcdepth.so"
 USB_IDS = {"02bf": "Kinect camera", "02be": "Kinect audio", "02c2": "Kinect motor"}
 
@@ -77,7 +77,7 @@ def check(require_native=True):
     interpreter = next((p for p in candidate_interpreters() if supports_kinect(p)), None)
     print("Python freenect + NumPy:", interpreter if interpreter else "not found")
     if interpreter and (not require_native or NATIVE.is_file()) and any(product == "02bf" for product, _ in devices):
-        print("Preflight ready. This does not prove USB permissions or live capture.")
+        print("Kinect detected and software found. Open a depth viewer to check live capture.")
         return interpreter, 0
     print("Preflight incomplete. No packages, drivers, or USB devices were changed.")
     if require_native and not NATIVE.is_file():
