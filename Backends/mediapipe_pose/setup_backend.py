@@ -311,6 +311,23 @@ def build():
     INSTALL.mkdir(parents=True, exist_ok=True)
     INCLUDE.mkdir(parents=True, exist_ok=True)
     shutil.copy2(product, INSTALL / product.name)
+
+    # The OPENCV=source build produces private runtime libraries inside Bazel.
+    # Install them beside libmanifold_pose.so so Manifold does not depend on
+    # system-wide OpenCV development/runtime packages.
+    opencv_libdir = CACHE / "bazel-bin/third_party/opencv_cmake/lib"
+    copied_opencv = []
+    if opencv_libdir.is_dir():
+        for source in sorted(opencv_libdir.glob("libopencv_*.so*")):
+            if source.is_file() or source.is_symlink():
+                target = INSTALL / source.name
+                shutil.copy2(source.resolve(), target)
+                copied_opencv.append(str(target))
+    if not copied_opencv:
+        raise SystemExit(
+            "Native Pose built, but its private OpenCV runtime libraries were not found."
+        )
+
     shutil.copy2(HERE / "include/manifold_pose.h", INCLUDE / "manifold_pose.h")
     state = {
         "backend": "mediapipe",
@@ -319,11 +336,13 @@ def build():
         "library": str(INSTALL / product.name),
         "header": str(INCLUDE / "manifold_pose.h"),
         "model": str(MODEL) if MODEL.is_file() else None,
+        "runtime_libraries": copied_opencv,
     }
     state_path = INSTALL / "pose_backend.json"
     state_path.write_text(json.dumps(state, indent=2) + "\n")
     print("\nNative Pose backend installed.")
     print("Library:", state["library"])
+    print("Bundled OpenCV runtime:", len(copied_opencv), "library file(s)")
     if state["model"]:
         print("Model:", state["model"])
     else:
