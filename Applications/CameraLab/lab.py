@@ -210,7 +210,10 @@ class CameraLab(tk.Tk):
         self.proc_kind=None
         self.proc_log=[]
         if self.next_job:
-            return
+            if kind == "pose_setup" and code != 0:
+                self.next_job=None
+            else:
+                return
         if kind == "preflight":
             if code == 0:
                 self.status.set("Kinect connected and its software is available. "
@@ -249,6 +252,11 @@ class CameraLab(tk.Tk):
     def start(self, name, command, kind):
         if self.proc and self.proc.poll() is None:
             self.next_job=(name,command,kind)
+            if self.proc_kind == "pose_setup" and kind == "pose":
+                self.status.set("Body tracking setup is still finishing. I'll open body tracking "
+                                "automatically when setup succeeds.")
+                self.record("Queued body tracking until setup finishes.")
+                return
             self.stop(switch=True)
             return
         self.next_job=None
