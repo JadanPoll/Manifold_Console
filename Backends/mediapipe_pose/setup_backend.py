@@ -254,6 +254,7 @@ def build():
     result = run([
         bazel, "build",
         "--define", "MEDIAPIPE_DISABLE_GPU=1",
+        "--define", "OPENCV=source",
         "--copt=-O3",
         "//manifold:libmanifold_pose.so"
     ], CACHE)
