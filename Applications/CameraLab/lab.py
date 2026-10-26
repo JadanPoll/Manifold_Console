@@ -13,7 +13,7 @@ import threading
 import tkinter as tk
 from tkinter import filedialog, ttk
 
-from camera_env import working_python, install_camera_tools
+from camera_env import working_python, install_camera_tools, remember_python
 
 ROOT = Path(__file__).resolve().parents[2]
 STUDIO = ROOT / "Applications/CameraLab/studio.py"
@@ -391,12 +391,16 @@ class CameraLab(tk.Tk):
         selected=filedialog.askopenfilename(parent=self, title="Select an existing Python with camera tools")
         if not selected: return
         os.environ["MANIFOLD_CAMERA_PYTHON"]=selected
+        try:
+            remember_python(selected)
+        except OSError as exc:
+            self.record("Could not remember camera setting: " + str(exc))
         self.record("Selected existing camera Python: " + selected)
         if self.pending_camera:
             name,args=self.pending_camera
             self.camera_request(name,args)
         else:
-            self.status.set("Existing camera environment selected. Choose a webcam or video mode.")
+            self.status.set("Camera tools selected. Choose a webcam or video mode.")
 
     def close(self):
         self.generation+=1
