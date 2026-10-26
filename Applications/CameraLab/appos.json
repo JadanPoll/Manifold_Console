@@ -1,0 +1,22 @@
+{
+  "schema_version": 1,
+  "id": "manifold.camera.lab",
+  "name": "Camera Lab",
+  "entry": {
+    "command": [
+      "python3",
+      "lab.py"
+    ]
+  },
+  "capabilities": [
+    "camera.video",
+    "vision.edges",
+    "vision.motion",
+    "camera.depth",
+    "vision.pose"
+  ],
+  "ui": {
+    "integration": "external-window",
+    "category": "Camera & Vision"
+  }
+}
