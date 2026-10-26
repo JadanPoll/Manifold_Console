@@ -83,17 +83,17 @@ extern "C" int mf_pose_process_rgb(mf_pose *ctx,
 
     const auto &result = detected.value();
     if (result.pose_landmarks.empty()) return 0;
-    const auto &landmarks = result.pose_landmarks.front();
-    const size_t n = landmarks.landmarks_size() < MF_POSE_LANDMARKS
-                         ? landmarks.landmarks_size()
+    const auto &landmarks = result.pose_landmarks.front().landmarks;
+    const size_t n = landmarks.size() < MF_POSE_LANDMARKS
+                         ? landmarks.size()
                          : MF_POSE_LANDMARKS;
     for (size_t i = 0; i < n; ++i) {
-        const auto &p = landmarks.landmarks(static_cast<int>(i));
-        out->landmarks[i].x = p.x();
-        out->landmarks[i].y = p.y();
-        out->landmarks[i].z = p.z();
-        out->landmarks[i].visibility = p.has_visibility() ? p.visibility() : 0.0f;
-        out->landmarks[i].presence = p.has_presence() ? p.presence() : 0.0f;
+        const auto &p = landmarks[i];
+        out->landmarks[i].x = p.x;
+        out->landmarks[i].y = p.y;
+        out->landmarks[i].z = p.z;
+        out->landmarks[i].visibility = p.visibility.value_or(0.0f);
+        out->landmarks[i].presence = p.presence.value_or(0.0f);
     }
     out->count = static_cast<uint32_t>(n);
     return 0;
