@@ -289,19 +289,39 @@ def patch_compile_time_string_for_gcc():
         print("MediaPipe compile-time string compatibility fix already present.", flush=True)
 
 
-def patch_opencv_soname():
-    """MediaPipe's OpenCV 4.10 source rule expects .so.4.10; OpenCV emits .so.410."""
+def patch_opencv_build():
+    """Repair MediaPipe's OpenCV 4.10 Linux source-build declarations."""
     build_file = CACHE / "third_party/BUILD"
     if not build_file.is_file():
         return
     text = build_file.read_text(encoding="utf-8")
-    old = 'OPENCV_SO_VERSION = "4.10"'
-    new = 'OPENCV_SO_VERSION = "410"'
-    if old in text:
-        build_file.write_text(text.replace(old, new), encoding="utf-8")
-        print("Corrected OpenCV 4.10 Linux SONAME expectation (.so.410).", flush=True)
-    elif new in text:
-        print("OpenCV SONAME compatibility fix already present.", flush=True)
+    changed = False
+
+    # OpenCV 4.10 emits SONAME .so.410, not .so.4.10.
+    if 'OPENCV_SO_VERSION = "4.10"' in text:
+        text = text.replace('OPENCV_SO_VERSION = "4.10"',
+                            'OPENCV_SO_VERSION = "410"')
+        changed = True
+
+    # calib3d has a hard runtime dependency on opencv_flann. MediaPipe's
+    # source-build module list omitted it, so foreign_cc never exported the
+    # library even though the selected modules require it.
+    modules_old = '''OPENCV_MODULES = [
+    "calib3d",
+    "features2d",'''
+    modules_new = '''OPENCV_MODULES = [
+    "calib3d",
+    "flann",
+    "features2d",'''
+    if modules_old in text:
+        text = text.replace(modules_old, modules_new)
+        changed = True
+
+    if changed:
+        build_file.write_text(text, encoding="utf-8")
+        print("Corrected MediaPipe OpenCV 4.10 runtime dependency closure.", flush=True)
+    else:
+        print("OpenCV build compatibility fixes already present.", flush=True)
 
 
 def build():
@@ -309,7 +329,7 @@ def build():
     patch_litert_for_gcc(bazel)
     patch_kleidiai_for_gcc(bazel)
     patch_compile_time_string_for_gcc()
-    patch_opencv_soname()
+    patch_opencv_build()
     result = run([
         bazel, "build",
         "--define", "MEDIAPIPE_DISABLE_GPU=1",
@@ -342,6 +362,32 @@ def build():
         raise SystemExit(
             "Native Pose built, but its private OpenCV runtime libraries were not found."
         )
+
+    # Verify the bundled OpenCV closure before claiming setup succeeded.
+    readelf = command("readelf")
+    if readelf:
+        provided = {p.name for p in INSTALL.glob("libopencv_*.so*")}
+        missing = set()
+        inspect = [INSTALL / product.name, *[Path(p) for p in copied_opencv]]
+        for binary in inspect:
+            try:
+                dynamic = capture([readelf, "-d", binary])
+            except (OSError, subprocess.CalledProcessError):
+                continue
+            for line in dynamic.splitlines():
+                if "(NEEDED)" not in line or "libopencv_" not in line:
+                    continue
+                left = line.find("[")
+                right = line.find("]", left + 1)
+                if left >= 0 and right > left:
+                    needed = line[left + 1:right]
+                    if needed not in provided:
+                        missing.add(needed)
+        if missing:
+            raise SystemExit(
+                "Native Pose built, but its bundled OpenCV runtime is incomplete: "
+                + ", ".join(sorted(missing))
+            )
 
     atomic_install(HERE / "include/manifold_pose.h", INCLUDE / "manifold_pose.h", 0o644)
     state = {
