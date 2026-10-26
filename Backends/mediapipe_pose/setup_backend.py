@@ -390,6 +390,33 @@ def build():
             )
 
     atomic_install(HERE / "include/manifold_pose.h", INCLUDE / "manifold_pose.h", 0o644)
+
+    # A successful compile is not a successful install until a fresh process can
+    # resolve the complete ELF dependency closure.
+    smoke_env = os.environ.copy()
+    prior_loader_path = smoke_env.get("LD_LIBRARY_PATH", "")
+    smoke_env["LD_LIBRARY_PATH"] = (
+        str(INSTALL) + (":" + prior_loader_path if prior_loader_path else "")
+    )
+    smoke = subprocess.run(
+        [
+            sys.executable,
+            "-c",
+            "import ctypes,sys; ctypes.CDLL(sys.argv[1]); print('native runtime load OK')",
+            str(INSTALL / product.name),
+        ],
+        env=smoke_env,
+        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+    )
+    if smoke.returncode:
+        raise SystemExit(
+            "Native Pose compiled, but its runtime dependency check failed:\n"
+            + smoke.stdout.strip()
+        )
+    print("Verified native runtime dependency closure.", flush=True)
+
     state = {
         "backend": "mediapipe",
         "upstream_revision": PIN,
