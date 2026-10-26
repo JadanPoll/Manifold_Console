@@ -82,9 +82,9 @@ def install_camera_tools():
             capture_output=True, text=True, timeout=180, check=False)
         if package.returncode:
             return False, (
-                "This Pi doesn't have an easily installable Camera Lab image package "
-                "in the selected Python environment. Nothing was installed system-wide. "
-                "Other experiments still work."
+                "Camera setup couldn't download or install a compatible image package "
+                "right now. Your system installation was not changed, and "
+                "other experiments still work."
             ), (package.stdout + "\n" + package.stderr).strip()
         interpreter, _ = working_python(available=[python])
         if not interpreter:
