@@ -66,16 +66,22 @@ class CameraLab(tk.Tk):
         ttk.Button(actions, text="Kinect depth point", command=self.kinect).grid(
             row=2, column=3, sticky="ew", padx=5)
 
-        ttk.Label(actions, text="Pose model:").grid(row=3, column=0, sticky="w", pady=6)
-        ttk.Entry(actions, textvariable=self.model, width=50).grid(
-            row=3, column=1, columnspan=2, sticky="ew", padx=7)
-        ttk.Button(actions, text="Browse…", command=self.pick_model).grid(
+        ttk.Label(actions, text="Kinect image:").grid(row=3, column=0, sticky="w", pady=6)
+        ttk.Button(actions, text="Depth image", command=lambda: self.kinect_image("depth")).grid(
+            row=3, column=2, sticky="ew", padx=5)
+        ttk.Button(actions, text="Depth edges", command=lambda: self.kinect_image("edges")).grid(
             row=3, column=3, sticky="ew", padx=5)
-        ttk.Label(actions, text="Body tracking:").grid(row=4, column=0, sticky="w", pady=6)
-        ttk.Button(actions, text="Pose with webcam", command=lambda: self.pose(False)).grid(
-            row=4, column=2, sticky="ew", padx=5)
-        ttk.Button(actions, text="Pose with video", command=lambda: self.pose(True)).grid(
+
+        ttk.Label(actions, text="Pose model:").grid(row=4, column=0, sticky="w", pady=6)
+        ttk.Entry(actions, textvariable=self.model, width=50).grid(
+            row=4, column=1, columnspan=2, sticky="ew", padx=7)
+        ttk.Button(actions, text="Browse…", command=self.pick_model).grid(
             row=4, column=3, sticky="ew", padx=5)
+        ttk.Label(actions, text="Body tracking:").grid(row=5, column=0, sticky="w", pady=6)
+        ttk.Button(actions, text="Pose with webcam", command=lambda: self.pose(False)).grid(
+            row=5, column=2, sticky="ew", padx=5)
+        ttk.Button(actions, text="Pose with video", command=lambda: self.pose(True)).grid(
+            row=5, column=3, sticky="ew", padx=5)
 
         actions.columnconfigure(2, weight=1)
         actions.columnconfigure(3, weight=1)
@@ -176,6 +182,10 @@ class CameraLab(tk.Tk):
 
     def kinect(self):
         self.start("Kinect depth", [sys.executable, "-u", str(KINECT)])
+
+    def kinect_image(self, mode):
+        self.start("Kinect depth image (" + mode + ")", 
+                   [sys.executable, "-u", str(KINECT), "--mode", mode])
 
     def pick_model(self):
         selected = filedialog.askopenfilename(parent=self, title="Select MediaPipe Pose Landmarker .task model",
