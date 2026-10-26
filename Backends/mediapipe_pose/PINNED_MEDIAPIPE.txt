@@ -1,0 +1,3 @@
+# Reference upstream revision used when this backend skeleton was authored.
+# We intentionally pin source rather than silently following master.
+bfafeaed685be63fbf7ace1c3fbc4bfcbbc30128
