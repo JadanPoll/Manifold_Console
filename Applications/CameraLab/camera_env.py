@@ -25,7 +25,7 @@ def remembered_python():
 
 def remember_python(python):
     PREFERENCE.parent.mkdir(parents=True, exist_ok=True)
-    PREFERENCE.write_text(json.dumps({"python": str(python)}) + "\\n", encoding="utf-8")
+    PREFERENCE.write_text(json.dumps({"python": str(python)}) + "\n", encoding="utf-8")
 
 
 def candidates():
