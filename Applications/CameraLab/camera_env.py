@@ -4,6 +4,7 @@ This only probes known local Python interpreters. It neither opens a camera
 nor installs anything. Used by Camera Lab in a background worker.
 """
 import os
+import json
 from pathlib import Path
 import shutil
 import subprocess
@@ -11,11 +12,26 @@ import sys
 
 HOME = Path.home()
 CAMERA_VENV = HOME / ".venvs/manifold-camera"
+PREFERENCE = HOME / ".config/manifold/camera.json"
+
+
+def remembered_python():
+    try:
+        data = json.loads(PREFERENCE.read_text(encoding="utf-8"))
+        return data.get("python") if isinstance(data.get("python"), str) else None
+    except (OSError, ValueError, TypeError, AttributeError):
+        return None
+
+
+def remember_python(python):
+    PREFERENCE.parent.mkdir(parents=True, exist_ok=True)
+    PREFERENCE.write_text(json.dumps({"python": str(python)}) + "\\n", encoding="utf-8")
 
 
 def candidates():
     choices = [
         os.environ.get("MANIFOLD_CAMERA_PYTHON"),
+        remembered_python(),
         str(CAMERA_VENV / "bin/python"),
         str(HOME / ".venvs/manifold-pose/bin/python"),
         str(HOME / "Desktop/PDFlets/.venv/bin/python"),
