@@ -110,6 +110,21 @@ def command(name):
 def capture(argv, cwd=None):
     return subprocess.check_output(list(map(str, argv)), cwd=cwd, text=True).strip()
 
+
+def atomic_install(source, target, mode):
+    """Replace a Bazel artifact without inheriting Bazel's read-only mode."""
+    source = Path(source)
+    target = Path(target)
+    target.parent.mkdir(parents=True, exist_ok=True)
+    tmp = target.with_name(target.name + ".installing")
+    tmp.unlink(missing_ok=True)
+    try:
+        shutil.copyfile(source, tmp)
+        tmp.chmod(mode)
+        os.replace(tmp, target)
+    finally:
+        tmp.unlink(missing_ok=True)
+
 def ensure_bazelisk():
     existing = command("bazelisk") or command("bazel")
     if existing:
@@ -310,7 +325,7 @@ def build():
 
     INSTALL.mkdir(parents=True, exist_ok=True)
     INCLUDE.mkdir(parents=True, exist_ok=True)
-    shutil.copy2(product, INSTALL / product.name)
+    atomic_install(product, INSTALL / product.name, 0o755)
 
     # The OPENCV=source build produces private runtime libraries inside Bazel.
     # Install them beside libmanifold_pose.so so Manifold does not depend on
@@ -321,14 +336,14 @@ def build():
         for source in sorted(opencv_libdir.glob("libopencv_*.so*")):
             if source.is_file() or source.is_symlink():
                 target = INSTALL / source.name
-                shutil.copy2(source.resolve(), target)
+                atomic_install(source.resolve(), target, 0o755)
                 copied_opencv.append(str(target))
     if not copied_opencv:
         raise SystemExit(
             "Native Pose built, but its private OpenCV runtime libraries were not found."
         )
 
-    shutil.copy2(HERE / "include/manifold_pose.h", INCLUDE / "manifold_pose.h")
+    atomic_install(HERE / "include/manifold_pose.h", INCLUDE / "manifold_pose.h", 0o644)
     state = {
         "backend": "mediapipe",
         "upstream_revision": PIN,
