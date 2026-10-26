@@ -28,6 +28,23 @@ class PoseFrame(ctypes.Structure):
 def load_backend():
     if not LIB.is_file():
         raise SystemExit("Native body tracking is not set up yet.")
+
+    # MediaPipe's private OpenCV build lives beside the Manifold backend.
+    # Preload in dependency-friendly order so no system OpenCV installation
+    # or LD_LIBRARY_PATH configuration is required.
+    runtime_dir = LIB.parent
+    order = ("core", "imgproc", "imgcodecs", "video", "features2d",
+             "calib3d", "videoio", "highgui")
+    for module in order:
+        matches = sorted(runtime_dir.glob(f"libopencv_{module}.so.*"))
+        if matches:
+            try:
+                ctypes.CDLL(str(matches[0]), mode=ctypes.RTLD_GLOBAL)
+            except OSError as exc:
+                raise SystemExit(
+                    f"Native body tracking runtime is incomplete ({matches[0].name}): {exc}"
+                )
+
     lib=ctypes.CDLL(str(LIB))
     lib.mf_pose_create.argtypes=[ctypes.c_char_p]
     lib.mf_pose_create.restype=ctypes.c_void_p
