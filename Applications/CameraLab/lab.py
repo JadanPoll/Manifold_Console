@@ -98,8 +98,9 @@ class CameraLab(tk.Tk):
         self.output.pack(fill="both", expand=True)
         self.record("Camera Lab opened. No camera has been accessed.")
 
-        ttk.Label(root, text="Inside a viewer: 1 image · 2 edges · 3 motion · S save · Q close",
-                  foreground="#576a75").pack(anchor="w", pady=(7,0))
+        self.hint = ttk.Label(root, text="Inside a viewer: 1 image · 2 edges · 3 motion · S save · Q close",
+                              foreground="#576a75")
+        self.hint.pack(anchor="w", pady=(7,0))
 
     def record(self, line):
         self.output.insert("end", str(line).rstrip() + "\n")
@@ -111,13 +112,8 @@ class CameraLab(tk.Tk):
         if self.logs_open:
             self.details.pack_forget()
         else:
-            self.details.pack(fill="both", expand=True, pady=(2,4), before=self.master_last_label)
+            self.details.pack(fill="both", expand=True, pady=(2,4), before=self.hint)
         self.logs_open = not self.logs_open
-
-    @property
-    def master_last_label(self):
-        # The hint label is always the final child of the root container.
-        return self.output.master.master.winfo_children()[-1]
 
     def copy_logs(self):
         self.clipboard_clear()
