@@ -1,0 +1,14 @@
+package(default_visibility = ["//visibility:public"])
+
+cc_binary(
+    name = "libmanifold_pose.so",
+    srcs = ["manifold_pose.cc"],
+    hdrs = ["manifold_pose.h"],
+    copts = ["-std=c++20"],
+    linkshared = True,
+    deps = [
+        "//mediapipe/framework/formats:image",
+        "//mediapipe/framework/formats:image_frame",
+        "//mediapipe/tasks/cc/vision/pose_landmarker:pose_landmarker",
+    ],
+)
