@@ -11,6 +11,7 @@ import sys
 HERE = Path(__file__).resolve().parent
 ROOT = HERE.parents[2]
 SCRIPT = HERE / "kinect_live.py"
+DEPTH_STUDIO = HERE / "kinect_depth_studio.py"
 NATIVE = ROOT / "AppOS/Native/build/libmcdepth.so"
 USB_IDS = {"02bf": "Kinect camera", "02be": "Kinect audio", "02c2": "Kinect motor"}
 
@@ -68,18 +69,18 @@ def usb_devices():
     return found
 
 
-def check():
+def check(require_native=True):
     devices = usb_devices()
     print("Kinect 1473 USB:", ", ".join(name for _, name in devices) if devices else
           "not detected in /sys/bus/usb/devices")
     print("Native depth library:", str(NATIVE), "present" if NATIVE.is_file() else "missing")
     interpreter = next((p for p in candidate_interpreters() if supports_kinect(p)), None)
     print("Python freenect + NumPy:", interpreter if interpreter else "not found")
-    if interpreter and NATIVE.is_file() and any(product == "02bf" for product, _ in devices):
+    if interpreter and (not require_native or NATIVE.is_file()) and any(product == "02bf" for product, _ in devices):
         print("Preflight ready. This does not prove USB permissions or live capture.")
         return interpreter, 0
     print("Preflight incomplete. No packages, drivers, or USB devices were changed.")
-    if not NATIVE.is_file():
+    if require_native and not NATIVE.is_file():
         print("Build existing local C library: make -C AppOS/Native")
     if not interpreter:
         print("Set MANIFOLD_KINECT_PYTHON to your existing working Kinect Python interpreter.")
@@ -89,11 +90,15 @@ def check():
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--check", action="store_true", help="inspect dependencies, do not open Kinect")
+    parser.add_argument("--mode", choices=("point", "depth", "edges", "motion"),
+                        default="point", help="point is the established nearest-point viewer")
     args = parser.parse_args(argv)
-    interpreter, code = check()
+    interpreter, code = check(require_native=args.mode == "point")
     if args.check or code:
         return code
-    os.execve(interpreter, [interpreter, str(SCRIPT)], kinect_env())
+    if args.mode == "point":
+        os.execve(interpreter, [interpreter, str(SCRIPT)], kinect_env())
+    os.execve(interpreter, [interpreter, str(DEPTH_STUDIO), "--mode", args.mode], kinect_env())
 
 
 if __name__ == "__main__":
