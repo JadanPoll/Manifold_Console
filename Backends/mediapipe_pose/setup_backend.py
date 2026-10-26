@@ -107,6 +107,9 @@ def recover_git_lock():
 def command(name):
     return shutil.which(name)
 
+def capture(argv, cwd=None):
+    return subprocess.check_output(list(map(str, argv)), cwd=cwd, text=True).strip()
+
 def ensure_bazelisk():
     existing = command("bazelisk") or command("bazel")
     if existing:
@@ -186,8 +189,39 @@ def ensure_model(download):
         tmp.unlink(missing_ok=True)
         raise SystemExit("Could not download pose model: " + str(exc))
 
+def patch_litert_for_gcc(bazel):
+    """Keep the existing GCC build cache; patch LiteRT's Clang-style ARM target."""
+    # Materialize external repositories without compiling.
+    fetched = run([bazel, "fetch", "//manifold:libmanifold_pose.so"], CACHE)
+    if fetched.returncode:
+        raise SystemExit("Could not prepare MediaPipe dependencies for compilation.")
+
+    output_base = Path(capture([bazel, "info", "output_base"], CACHE))
+    candidates = list((output_base / "external").glob(
+        "*litert*/tflite/kernels/internal/optimized/4bit/neon_fully_connected_*_sdot.cc"
+    ))
+    if not candidates:
+        raise SystemExit(
+            "LiteRT source was prepared, but the ARM dot-product kernel could not be located."
+        )
+
+    changed = 0
+    for source in candidates:
+        text = source.read_text(encoding="utf-8")
+        old = '__attribute__((target("dotprod")))'
+        new = '__attribute__((target("+dotprod")))'
+        if old in text:
+            source.write_text(text.replace(old, new), encoding="utf-8")
+            changed += 1
+    if changed:
+        print("Applied ARM/GCC compatibility fix to LiteRT dot-product kernel.", flush=True)
+    else:
+        print("LiteRT ARM/GCC compatibility fix already present.", flush=True)
+
+
 def build():
     bazel = ensure_bazelisk()
+    patch_litert_for_gcc(bazel)
     result = run([
         bazel, "build",
         "--define", "MEDIAPIPE_DISABLE_GPU=1",
