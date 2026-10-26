@@ -142,7 +142,9 @@ class CameraLab(tk.Tk):
         try:
             self.proc = subprocess.Popen(command, cwd=str(ROOT), text=True,
                                          stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
-                                         bufsize=1, start_new_session=(os.name=="posix"))
+                                         bufsize=1, start_new_session=False)
+            # Inherit Camera Lab's group so Home's group stop also terminates
+            # child capture processes; don't create an escape session.
         except OSError as exc:
             self.record(f"Cannot start {title}: {exc}")
             self.status.set(f"Start failed: {exc}")
@@ -223,10 +225,7 @@ class CameraLab(tk.Tk):
             return
         pid = self.proc.pid
         try:
-            if os.name == "posix":
-                os.killpg(pid, signal.SIGTERM)
-            else:
-                self.proc.terminate()
+            self.proc.terminate()  # Only this child; Home owns the app process group.
             self.record(f"Stop requested for PID {pid}.")
             self.status.set("Stop requested; the camera should be released when the process exits.")
         except ProcessLookupError:
