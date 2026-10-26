@@ -2,7 +2,7 @@
 
 No OpenCV, Internet connection, package installation or native C build.
 The producer owns the Kinect. Tk reads only the latest rendered frame.
-Keys: 1 depth image, 2 depth edges, 3 depth motion, S save PPM, Q/ESC exit.
+Keys: 1 depth image, 2 depth edges, 3 depth motion, S save PNG, Q/ESC exit.
 """
 import argparse
 from datetime import datetime
@@ -123,8 +123,8 @@ class Viewer(tk.Tk):
         elif event.char.lower() == "s" and self.image_bytes:
             output = Path.home() / "Pictures" / "Manifold"
             output.mkdir(parents=True, exist_ok=True)
-            target = output / ("kinect_" + datetime.now().strftime("%Y%m%d_%H%M%S_%f") + ".ppm")
-            target.write_bytes(self.image_bytes)
+            target = output / ("kinect_" + datetime.now().strftime("%Y%m%d_%H%M%S_%f") + ".png")
+            self.photo.write(str(target), format="png")
             self.status.set("Saved image: " + str(target))
             print("Saved image: " + str(target), flush=True)
 
