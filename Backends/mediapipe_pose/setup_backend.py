@@ -247,10 +247,38 @@ def patch_kleidiai_for_gcc(bazel):
             print("KleidiAI GCC 12 compatibility fix already present.", flush=True)
 
 
+def patch_compile_time_string_for_gcc():
+    """GCC 12 needs the structural NTTP object to be copy-constructible."""
+    if platform.machine().lower() not in ("aarch64", "arm64"):
+        return
+    gcc = command("gcc")
+    if not gcc:
+        return
+    try:
+        version = capture([gcc, "-dumpfullversion"])
+    except (OSError, subprocess.CalledProcessError):
+        return
+    if not version.startswith("12."):
+        return
+
+    source = CACHE / "mediapipe/framework/deps/compile_time_string.h"
+    if not source.is_file():
+        return
+    text = source.read_text(encoding="utf-8")
+    old = "CompileTimeString(const CompileTimeString&) = delete;"
+    new = "constexpr CompileTimeString(const CompileTimeString&) = default;"
+    if old in text:
+        source.write_text(text.replace(old, new), encoding="utf-8")
+        print("Applied GCC 12 compatibility fix to MediaPipe compile-time strings.", flush=True)
+    elif new in text:
+        print("MediaPipe compile-time string compatibility fix already present.", flush=True)
+
+
 def build():
     bazel = ensure_bazelisk()
     patch_litert_for_gcc(bazel)
     patch_kleidiai_for_gcc(bazel)
+    patch_compile_time_string_for_gcc()
     result = run([
         bazel, "build",
         "--define", "MEDIAPIPE_DISABLE_GPU=1",
